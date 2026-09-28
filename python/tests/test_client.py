@@ -178,7 +178,29 @@ class TestPublish:
         assert script.requests[0].headers["idempotency-key"] == "order-1234-linkedin"
         assert "idempotency-key" not in script.requests[1].headers
 
-    @pytest.mark.parametrize("bad", ["", "   ", "x" * 256, "café", "a\nb", "tab\there", "ok\n"])
+    @pytest.mark.parametrize(
+        ("given", "sent"),
+        [
+            ("\tK\t", "K"),
+            ("ok\n", "ok"),
+            ('"K"', "K"),
+            (' "order 7" ', "order 7"),
+            ('""K""', '"K"'),
+            ('"', '"'),
+            (" K﻿", "K"),
+        ],
+    )
+    def test_a_key_is_read_exactly_as_the_api_reads_it(self, make_client, given, sent) -> None:
+        # The API trims with JavaScript's trim(), then removes ONE pair of surrounding double
+        # quotes; the header carries the key the API will use, and so does the result.
+        client, script = make_client(json_reply(200, {"data": {}}))
+        result = client.publish(POST, idempotency_key=given)
+        assert script.requests[0].headers["idempotency-key"] == sent
+        assert result.idempotency_key == sent
+
+    @pytest.mark.parametrize(
+        "bad", ["", "   ", '""', ' "" ', "x" * 256, "café", "a\nb", "tab\there"]
+    )
     def test_a_key_the_api_would_refuse_is_refused_before_sending(self, make_client, bad) -> None:
         client, script = make_client()
         with pytest.raises(ValueError, match="printable ASCII"):

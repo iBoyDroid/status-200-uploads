@@ -60,6 +60,8 @@ MEDIA_POLL_INTERVAL = 5.0
 #: Idempotency-Key: 1 to 255 printable ASCII characters (parameters.IdempotencyKey of the file).
 KEY_MAX_LENGTH = 255
 KEY_PATTERN = re.compile(r"^[\x20-\x7E]+$")
+#: The characters JavaScript's String.prototype.trim() removes: the API trims the key with it.
+_TRIM = " \t\n\x0b\x0c\r                 　﻿"
 
 #: The requests this client sends (method, path on the base URL, query parameters it may add).
 #: tests/test_contract.py holds each to an operation of the OpenAPI file's main address.
@@ -146,15 +148,18 @@ def _is_dry_run(body: Mapping[str, Any]) -> bool:
 
 
 def _key(value: str | bool | None) -> str | None:
-    """None: a new key (a UUID); False: no key; a string: that key, checked like the API does
-    (the API also removes spaces around it)."""
+    """None: a new key (a UUID); False: no key; a string: that key, read exactly as the API reads
+    it: whitespace around it trimmed, then one pair of surrounding double quotes removed, then
+    1 to 255 printable ASCII characters. Result.idempotency_key is therefore the key the API uses."""
     if value is None or value is True:
         return str(uuid.uuid4())
     if value is False:
         return None
     if not isinstance(value, str):
         raise TypeError("idempotency_key must be a string, None (automatic) or False (none)")
-    value = value.strip(" ")
+    value = value.strip(_TRIM)
+    if len(value) >= 2 and value.startswith('"') and value.endswith('"'):
+        value = value[1:-1]
     if not value or len(value) > KEY_MAX_LENGTH or not KEY_PATTERN.fullmatch(value):
         raise ValueError(
             f"idempotency_key must be 1 to {KEY_MAX_LENGTH} printable ASCII characters "
