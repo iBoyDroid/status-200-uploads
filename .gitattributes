@@ -1,0 +1,13 @@
+# Every text file is stored and checked out with LF line endings, on every platform.
+* text=auto eol=lf
+
+# Binary files are never converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.tgz binary
+*.whl binary
+*.gz binary
