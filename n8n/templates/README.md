@@ -44,7 +44,8 @@ run the node's **Post: Cancel** with that id.
 
 Every post and import carries an automatic Idempotency-Key, made from the workflow, the execution, the
 node, the item and the request. Turning on **Retry On Fail** for the Publish nodes is safe: a retry in
-the same execution gets the first answer back instead of posting twice. Running the whole workflow again
+the same execution gets the first answer back instead of posting twice, as long as no field of those nodes
+uses `$now` or a random value (a changed request is a new post). Running the whole workflow again
 is a new execution, and posts again.
 
 ## Tested

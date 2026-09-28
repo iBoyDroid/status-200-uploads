@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Cross-post text and an image to X, LinkedIn and Facebook\n\nPost one update with one image to three networks in a single run, then see where each post landed. The networks are connected once in Status 200 Uploads, not in n8n.\n\n### How it works\n1. **Your settings** holds the post text, an optional shorter text for X and the public URL of the image.\n2. **Import image** copies the image to Status 200 Uploads and waits until it is ready.\n3. The three **Publish** nodes send one post each. Every request carries an automatic Idempotency-Key, so a retry never posts twice.\n4. **Collect the answers** and **Read each post** report each network's status and link.\n\n### Setup\n1. Install the community node `@status200uploads/n8n-nodes-status200uploads` (Settings, Community Nodes). Until n8n verifies it, it installs on self-hosted n8n only.\n2. In your Status 200 Uploads dashboard, connect X, LinkedIn and a Facebook Page, and create an API key on the API page. X needs the X add-on on your plan.\n3. Create a **Status 200 Uploads API** credential with that key. In each Publish node choose the credential and your account.\n4. Fill in **Your settings** and click **Execute workflow**.",
+        "content": "## Cross-post text and an image to X, LinkedIn and Facebook\n\nPost one update with one image to three networks in a single run, then see where each post landed. The networks are connected once in Status 200 Uploads, not in n8n.\n\n### How it works\n1. **Your settings** holds the post text, an optional shorter text for X and the public URL of the image.\n2. **Import image** copies the image to Status 200 Uploads and waits until it is ready.\n3. The three **Publish** nodes send one post each. Every request carries an automatic Idempotency-Key, so a retry does not post twice, as long as no post field uses $now or a random value.\n4. **Collect the answers** and **Read each post** report each network's status and link.\n\n### Setup\n1. Install the community node `@status200uploads/n8n-nodes-status200uploads` (Settings, Community Nodes). Until n8n verifies it, it installs on self-hosted n8n only.\n2. In your Status 200 Uploads dashboard, connect X, LinkedIn and a Facebook Page, and create an API key on the API page. X needs the X add-on on your plan.\n3. Create a **Status 200 Uploads API** credential with that key. In each Publish node choose the credential and your account.\n4. Fill in **Your settings** and click **Execute workflow**.",
         "height": 700,
         "width": 460
       },
@@ -41,7 +41,7 @@
     },
     {
       "parameters": {
-        "content": "## 3. Publish\nOne node per network. The automatic Idempotency-Key makes Retry On Fail safe: a post is never sent twice.",
+        "content": "## 3. Publish\nOne node per network. The automatic Idempotency-Key makes Retry On Fail safe: a post is not sent twice, as long as no field here uses $now or a random value.",
         "height": 640,
         "width": 260,
         "color": 7
