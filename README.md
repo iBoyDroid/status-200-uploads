@@ -8,6 +8,7 @@ open-source clients of that API.
 |---|---|---|
 | [`n8n/`](n8n) | The n8n community node **Status 200 Uploads** | n8n: Settings, Community Nodes, Install `@status200uploads/n8n-nodes-status200uploads` |
 | [`python/`](python) | The Python package `status200uploads` | `pip install status200uploads` |
+| [`n8n/templates/`](n8n/templates) | Two n8n workflows to import: a cross-post to X, LinkedIn and Facebook, and a short video to TikTok, Instagram Reels and YouTube Shorts | n8n: Workflows, Import from File |
 | [`openapi/openapi.yaml`](openapi/openapi.yaml) | The OpenAPI 3.1 description of the API | Served at https://status200uploads.com/openapi.yaml |
 
 Both packages call `https://status200uploads.com/api/v2` with an API key from your Status 200 Uploads
@@ -31,8 +32,10 @@ updated when the API changes, and never edited here.
 ## Releases
 
 Each package is released from its own tag (`n8n-vX.Y.Z` for the n8n node, `python-vX.Y.Z` for the
-Python package) by GitHub Actions in this repository, with a provenance statement (npm) or attestations
-(PyPI). Nothing is published from a personal machine.
+Python package) by GitHub Actions in this repository, after the maintainer approves the run, with a
+provenance statement (npm) or attestations (PyPI). Nothing is published from a personal machine. The
+steps are in [RELEASING.md](RELEASING.md), and the changes in [CHANGELOG.md](CHANGELOG.md) and each
+package's own changelog.
 
 ## License
 

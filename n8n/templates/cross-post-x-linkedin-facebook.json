@@ -1,0 +1,362 @@
+{
+  "name": "Cross-post text and an image to X, LinkedIn and Facebook with Status 200 Uploads",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Cross-post text and an image to X, LinkedIn and Facebook\n\nPost one update with one image to three networks in a single run, then see where each post landed. The networks are connected once in Status 200 Uploads, not in n8n.\n\n### How it works\n1. **Your settings** holds the post text, an optional shorter text for X and the public URL of the image.\n2. **Import image** copies the image to Status 200 Uploads and waits until it is ready.\n3. The three **Publish** nodes send one post each. Every request carries an automatic Idempotency-Key, so a retry never posts twice.\n4. **Collect the answers** and **Read each post** report each network's status and link.\n\n### Setup\n1. Install the community node `@status200uploads/n8n-nodes-status200uploads` (Settings, Community Nodes). Until n8n verifies it, it installs on self-hosted n8n only.\n2. In your Status 200 Uploads dashboard, connect X, LinkedIn and a Facebook Page, and create an API key on the API page. X needs the X add-on on your plan.\n3. Create a **Status 200 Uploads API** credential with that key. In each Publish node choose the credential and your account.\n4. Fill in **Your settings** and click **Execute workflow**.",
+        "height": 700,
+        "width": 460
+      },
+      "id": "523b0f08-12d3-4bd7-9c9a-f8ec5a6277ae",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-560, -240]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Your settings\nWrite the post text and the public URL of the image (JPG, PNG or WebP, up to 20 MB). Leave x_text empty to use the same text on X.",
+        "height": 300,
+        "width": 440,
+        "color": 7
+      },
+      "id": "0f51a50e-d9fc-4bab-9bfa-ed4edeaa6712",
+      "name": "Note: settings",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-40, -140]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Import the image\nThe image is copied once and all three posts use its File ID. The node waits until the file is ready.",
+        "height": 300,
+        "width": 240,
+        "color": 7
+      },
+      "id": "17780557-3318-4ee0-8acc-36a66f348ef9",
+      "name": "Note: import",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [420, -140]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Publish\nOne node per network. The automatic Idempotency-Key makes Retry On Fail safe: a post is never sent twice.",
+        "height": 640,
+        "width": 260,
+        "color": 7
+      },
+      "id": "540967c4-48c8-47eb-a4ec-48ec80434219",
+      "name": "Note: publish",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [680, -320]
+    },
+    {
+      "parameters": {
+        "content": "## 4. See how it went\nThe answers are collected, then each post is read back: its network, status and link.",
+        "height": 300,
+        "width": 700,
+        "color": 7
+      },
+      "id": "3225f114-3f56-4f1a-9f12-8654989b5a4e",
+      "name": "Note: result",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [960, -140]
+    },
+    {
+      "parameters": {},
+      "id": "81a05a22-141e-42cb-b535-3eeb57195055",
+      "name": "Run by hand",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 20]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "08be34da-4d58-45b2-9ef0-3b11c333924a",
+              "name": "post_text",
+              "value": "Our autumn guide is out: twelve small changes that make a big difference this season. Read it here: https://example.com/autumn-guide",
+              "type": "string"
+            },
+            {
+              "id": "7fd5694e-2d74-4e60-9afa-7138f5123f21",
+              "name": "x_text",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "49b1adcf-2844-422c-8ed1-23928a765260",
+              "name": "image_url",
+              "value": "https://example.com/autumn-guide.jpg",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "285f71b5-de8f-45e3-b78c-db53aa05766f",
+      "name": "Your settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 20]
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "importFromUrl",
+        "url": "={{ $json.image_url }}",
+        "options": {}
+      },
+      "id": "8f70e8a4-863d-4322-bb71-31c9ec03dd1f",
+      "name": "Import image",
+      "type": "@status200uploads/n8n-nodes-status200uploads.status200Uploads",
+      "typeVersion": 1,
+      "position": [480, 20]
+    },
+    {
+      "parameters": {
+        "resource": "post",
+        "operation": "create",
+        "account": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "platform": "x",
+        "text": "={{ $('Your settings').item.json.post_text }}",
+        "media": "fileIds",
+        "fileIds": "={{ $json.file_id }}",
+        "xOptions": {
+          "text": "={{ $('Your settings').item.json.x_text }}"
+        },
+        "options": {}
+      },
+      "id": "5b954eb2-383d-44ba-9644-8ea0c658936b",
+      "name": "Publish to X",
+      "type": "@status200uploads/n8n-nodes-status200uploads.status200Uploads",
+      "typeVersion": 1,
+      "position": [740, -180]
+    },
+    {
+      "parameters": {
+        "resource": "post",
+        "operation": "create",
+        "account": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "platform": "linkedin",
+        "text": "={{ $('Your settings').item.json.post_text }}",
+        "media": "fileIds",
+        "fileIds": "={{ $json.file_id }}",
+        "options": {}
+      },
+      "id": "a19d4aca-18dc-4422-985e-e6140f851157",
+      "name": "Publish to LinkedIn",
+      "type": "@status200uploads/n8n-nodes-status200uploads.status200Uploads",
+      "typeVersion": 1,
+      "position": [740, 20]
+    },
+    {
+      "parameters": {
+        "resource": "post",
+        "operation": "create",
+        "account": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "platform": "facebook",
+        "text": "={{ $('Your settings').item.json.post_text }}",
+        "media": "fileIds",
+        "fileIds": "={{ $json.file_id }}",
+        "options": {}
+      },
+      "id": "a2896662-08d2-4fc4-84fb-7e872405f2f2",
+      "name": "Publish to Facebook",
+      "type": "@status200uploads/n8n-nodes-status200uploads.status200Uploads",
+      "typeVersion": 1,
+      "position": [740, 220]
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "id": "aa79f4dc-17ba-4e17-833d-0739a00453eb",
+      "name": "Collect the answers",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [1000, 20]
+    },
+    {
+      "parameters": {
+        "resource": "post",
+        "operation": "get",
+        "post": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ ($json.status200 || {}).post_id || ($json.status200 || {}).scheduled_post_id }}"
+        }
+      },
+      "id": "ae3ec3b2-4abf-40fb-b731-4bee0319b076",
+      "name": "Read each post",
+      "type": "@status200uploads/n8n-nodes-status200uploads.status200Uploads",
+      "typeVersion": 1,
+      "position": [1220, 20]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "631bd199-fd0d-48c0-b2f9-7ec0b67e5122",
+              "name": "network",
+              "value": "={{ $json.platform || ($json.platforms || []).join(', ') }}",
+              "type": "string"
+            },
+            {
+              "id": "6830f5af-b9b1-4ac2-9e40-809a1319f445",
+              "name": "status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "aa9d718d-4341-4a93-a0b1-826115beabb1",
+              "name": "link",
+              "value": "={{ $json.permalink || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "8b59f606-ff1c-4020-8b7c-2c3209de1f3b",
+              "name": "problem",
+              "value": "={{ $json.error_message || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ea889c17-1b1e-41e2-8962-7216265571ab",
+              "name": "post_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "04a4e5fa-82b2-48e2-bcb0-6d2943f4109b",
+      "name": "Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1440, 20]
+    }
+  ],
+  "connections": {
+    "Run by hand": {
+      "main": [
+        [
+          {
+            "node": "Your settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Your settings": {
+      "main": [
+        [
+          {
+            "node": "Import image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Import image": {
+      "main": [
+        [
+          {
+            "node": "Publish to X",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Publish to LinkedIn",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Publish to Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish to X": {
+      "main": [
+        [
+          {
+            "node": "Collect the answers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Collect the answers",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Publish to Facebook": {
+      "main": [
+        [
+          {
+            "node": "Collect the answers",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Collect the answers": {
+      "main": [
+        [
+          {
+            "node": "Read each post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read each post": {
+      "main": [
+        [
+          {
+            "node": "Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

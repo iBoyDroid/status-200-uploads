@@ -1,0 +1,13 @@
+# Proposes updates of the GitHub Actions the workflows use. They are pinned to full commit SHAs; a
+# Dependabot pull request moves the SHA and its version comment together, and CI runs on it.
+# Package dependencies are updated by hand: the generator and n8n's tools are pinned on purpose.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - '*'

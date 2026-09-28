@@ -1,0 +1,40 @@
+# Once a day, and by hand, compares openapi/openapi.yaml with the file the service publishes at
+# https://status200uploads.com/openapi.yaml. A failure means the API description changed and the copy
+# here needs the sync described in RELEASING.md; GitHub emails the maintainer when this fails.
+
+name: OpenAPI copy is current
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    name: Compare with the live file
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download https://status200uploads.com/openapi.yaml and compare
+        run: |
+          curl --fail --silent --show-error --location --retry 3 --max-time 60 \
+            --dump-header "$RUNNER_TEMP/headers.txt" --output "$RUNNER_TEMP/live.yaml" \
+            https://status200uploads.com/openapi.yaml
+          if ! head -n 1 "$RUNNER_TEMP/live.yaml" | grep -q '^openapi: 3\.1'; then
+            echo "::error::https://status200uploads.com/openapi.yaml did not answer with the OpenAPI file ($(grep -i '^content-type' "$RUNNER_TEMP/headers.txt" | tr -d '\r'))."
+            exit 1
+          fi
+          tr -d '\r' < "$RUNNER_TEMP/live.yaml" > "$RUNNER_TEMP/live-lf.yaml"
+          if ! diff -u openapi/openapi.yaml "$RUNNER_TEMP/live-lf.yaml" > "$RUNNER_TEMP/drift.diff"; then
+            head -n 200 "$RUNNER_TEMP/drift.diff"
+            echo "::error::openapi/openapi.yaml differs from https://status200uploads.com/openapi.yaml. Sync the copy (RELEASING.md, 'The API description')."
+            exit 1
+          fi
+          echo "openapi/openapi.yaml is the live file."

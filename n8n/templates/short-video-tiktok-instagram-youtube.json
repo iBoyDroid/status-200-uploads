@@ -1,0 +1,550 @@
+{
+  "name": "Publish a short video to TikTok, Instagram Reels and YouTube Shorts and confirm it went live",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Publish a short video to TikTok, Instagram Reels and YouTube Shorts\n\nSend one vertical video to three networks, then wait until each one says it is live. Try it first with check_only on: every check runs and nothing is posted.\n\n### How it works\n1. **Your settings** holds the video URL, the caption, the YouTube title, check_only and an optional time to publish at.\n2. **Import video** copies the video to Status 200 Uploads and waits until it is ready.\n3. The three **Publish** nodes post it, schedule it, or only check it. Each request carries an automatic Idempotency-Key, so a retry never posts twice.\n4. A post sent now is read every 30 seconds, for up to 10 minutes, until its network is done. Checks and scheduled posts are reported at once.\n\n### Setup\n1. Install the community node `@status200uploads/n8n-nodes-status200uploads` (Settings, Community Nodes). Until n8n verifies it, it installs on self-hosted n8n only.\n2. In your Status 200 Uploads dashboard, connect TikTok, Instagram and YouTube, and create an API key on the API page.\n3. Create a **Status 200 Uploads API** credential with that key. In each Publish node choose the credential and your account. In **Publish to TikTok** choose who can see the video; in **Publish to YouTube Shorts** the video is private until you choose otherwise.\n4. Fill in **Your settings**, run once with check_only true, then set it to false.",
+        "height": 760,
+        "width": 480
+      },
+      "id": "4cebba65-5e32-4e03-a7d3-86864fcb542d",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-580, -280]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Your settings\ncheck_only true runs every check and posts nothing. Leave publish_at empty to post now, or give a date and time such as 2026-10-01 09:00 (the workflow's time zone) to schedule it.",
+        "height": 340,
+        "width": 440,
+        "color": 7
+      },
+      "id": "3ab2e5ae-9054-46c5-8ed2-d9e27c3f344d",
+      "name": "Note: settings",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-40, -180]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Import the video\nMP4, MOV or WebM, up to 5 GB, from a public URL. The node waits up to 10 minutes until it is ready.",
+        "height": 340,
+        "width": 240,
+        "color": 7
+      },
+      "id": "dfc093a8-3516-4d1c-af4a-c4317cc18cab",
+      "name": "Note: import",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [420, -180]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Publish\nOne node per network. TikTok and Instagram finish after the answer, and YouTube uploads in the background, so the next step waits for them.",
+        "height": 680,
+        "width": 280,
+        "color": 7
+      },
+      "id": "58ef9028-6d62-4a84-b501-1352499b59e0",
+      "name": "Note: publish",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [680, -360]
+    },
+    {
+      "parameters": {
+        "content": "## 4. Wait until it is live\nEach post sent now is read every 30 seconds until it is done, at most 20 times. Checks and scheduled posts skip the wait. Post: Cancel stops a scheduled post by its scheduled_post_id.",
+        "height": 680,
+        "width": 1180,
+        "color": 7
+      },
+      "id": "c7048802-61fd-410e-9611-6af045ccd86d",
+      "name": "Note: result",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [980, -360]
+    },
+    {
+      "parameters": {},
+      "id": "8caa0ee2-bda3-4986-8d0b-fd1ff72b2b33",
+      "name": "Run by hand",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 20]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "37d9d7ed-19c0-4817-9f6e-88f8e25914c2",
+              "name": "video_url",
+              "value": "https://example.com/short-video.mp4",
+              "type": "string"
+            },
+            {
+              "id": "8e878fac-1acf-4c2e-bc82-862257141ca8",
+              "name": "caption",
+              "value": "Three quick tips for brighter photos with your phone #photography #tips",
+              "type": "string"
+            },
+            {
+              "id": "bb1633bf-0f08-4104-bae0-9d24330b98fd",
+              "name": "youtube_title",
+              "value": "Three quick tips for brighter phone photos #Shorts",
+              "type": "string"
+            },
+            {
+              "id": "e288cb2c-64d9-467c-a057-ef589583a871",
+              "name": "check_only",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "9447c895-c5c3-46d9-980e-7ce71d8eccaf",
+              "name": "publish_at",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1e8935d0-b3fb-4827-b2ad-c8dd3041cc13",
+      "name": "Your settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 20]
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "importFromUrl",
+        "url": "={{ $json.video_url }}",
+        "options": {
+          "maxWait": 600
+        }
+      },
+      "id": "4d910748-8973-442b-86f7-3b999ebbd8fe",
+      "name": "Import video",
+      "type": "@status200uploads/n8n-nodes-status200uploads.status200Uploads",
+      "typeVersion": 1,
+      "position": [480, 20]
+    },
+    {
+      "parameters": {
+        "resource": "post",
+        "operation": "create",
+        "account": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "platform": "tiktok",
+        "text": "={{ $('Your settings').item.json.caption }}",
+        "media": "fileIds",
+        "fileIds": "={{ $json.file_id }}",
+        "when": "={{ $('Your settings').item.json.publish_at ? 'later' : 'now' }}",
+        "scheduledFor": "={{ $('Your settings').item.json.publish_at }}",
+        "options": {
+          "dryRun": "={{ $('Your settings').item.json.check_only }}"
+        }
+      },
+      "id": "f8e546ff-51b2-4372-ae5a-829f6d74dd64",
+      "name": "Publish to TikTok",
+      "type": "@status200uploads/n8n-nodes-status200uploads.status200Uploads",
+      "typeVersion": 1,
+      "position": [740, -200]
+    },
+    {
+      "parameters": {
+        "resource": "post",
+        "operation": "create",
+        "account": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "platform": "instagram",
+        "text": "={{ $('Your settings').item.json.caption }}",
+        "media": "fileIds",
+        "fileIds": "={{ $json.file_id }}",
+        "when": "={{ $('Your settings').item.json.publish_at ? 'later' : 'now' }}",
+        "scheduledFor": "={{ $('Your settings').item.json.publish_at }}",
+        "instagramOptions": {
+          "postType": "reel"
+        },
+        "options": {
+          "dryRun": "={{ $('Your settings').item.json.check_only }}"
+        }
+      },
+      "id": "182370ad-be0d-473a-a69f-ff65f92c7cea",
+      "name": "Publish to Instagram Reels",
+      "type": "@status200uploads/n8n-nodes-status200uploads.status200Uploads",
+      "typeVersion": 1,
+      "position": [740, 20]
+    },
+    {
+      "parameters": {
+        "resource": "post",
+        "operation": "create",
+        "account": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "platform": "youtube",
+        "text": "={{ $('Your settings').item.json.caption }}",
+        "media": "fileIds",
+        "fileIds": "={{ $json.file_id }}",
+        "when": "={{ $('Your settings').item.json.publish_at ? 'later' : 'now' }}",
+        "scheduledFor": "={{ $('Your settings').item.json.publish_at }}",
+        "youtubePrivacyStatus": "private",
+        "youtubeOptions": {
+          "title": "={{ $('Your settings').item.json.youtube_title }}"
+        },
+        "options": {
+          "dryRun": "={{ $('Your settings').item.json.check_only }}"
+        }
+      },
+      "id": "23b7239b-c858-40fd-94ef-1a6045b6c943",
+      "name": "Publish to YouTube Shorts",
+      "type": "@status200uploads/n8n-nodes-status200uploads.status200Uploads",
+      "typeVersion": 1,
+      "position": [740, 240]
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "id": "bea773e9-5f3f-494f-b6ff-10b20607c831",
+      "name": "Collect the answers",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [1020, 20]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5979f7b0-151b-4b68-bc37-85223453c272",
+              "leftValue": "={{ Boolean($json.status200 && $json.status200.post_id) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ae2bb034-9c85-4c8f-87c1-871dfb5b0ae7",
+      "name": "Sent now?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1240, 20]
+    },
+    {
+      "parameters": {
+        "resource": "post",
+        "operation": "get",
+        "post": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.status200 ? $json.status200.post_id : $json.id }}"
+        }
+      },
+      "id": "ee48b6f8-2b51-4fee-a810-e9576ee6d517",
+      "name": "Read the post",
+      "type": "@status200uploads/n8n-nodes-status200uploads.status200Uploads",
+      "typeVersion": 1,
+      "position": [1480, -140]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9b1b7b3d-7e25-44ae-9977-9a4ce7b1fe4f",
+              "leftValue": "={{ $json.done === true || $runIndex >= 20 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "17672716-ff3a-455a-bef6-22c584dd6fcf",
+      "name": "Live yet?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1700, -140]
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "id": "a4a414cc-8bd5-4821-ae9d-88d189c16fed",
+      "name": "Wait 30 seconds",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1700, 80],
+      "webhookId": "2f2a8cf6-7884-47b6-8d52-1a3c7036d7b5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a646f522-ccd2-4e53-a4b0-14a0213d791a",
+              "name": "network",
+              "value": "={{ $json.platform }}",
+              "type": "string"
+            },
+            {
+              "id": "8872b50e-e600-4b07-b976-5373b0494a13",
+              "name": "status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "1b2b8e6d-0ba3-4a6a-ac9b-d2d0cc98a606",
+              "name": "done",
+              "value": "={{ $json.done === true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "3876a95a-ecaf-4458-a005-1a216e909480",
+              "name": "link",
+              "value": "={{ $json.permalink || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "102b6794-50d4-43a6-a8e8-7788746c808a",
+              "name": "problem",
+              "value": "={{ $json.error_message || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e0363f98-7c9a-462a-9ae0-04de90a5948c",
+      "name": "Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1940, -160]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3fcaca5e-9723-4f0b-9e10-6828f153b73d",
+              "name": "network",
+              "value": "={{ $json.target ? $json.target.platform : ($json.platform || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "c3f17bc3-2562-42bc-a64a-4be15fb6117b",
+              "name": "result",
+              "value": "={{ $json.dry_run ? 'checked: ' + $json.outcome + ($json.reason ? ' (' + $json.reason.code + ': ' + $json.reason.message + ')' : '') : ($json.code || 'accepted') }}",
+              "type": "string"
+            },
+            {
+              "id": "93d37965-eb19-4091-84bf-52afdce3ea1c",
+              "name": "scheduled_post_id",
+              "value": "={{ $json.scheduled_post_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "90cb98e3-d078-4b77-8c48-ea1625c5e10d",
+              "name": "scheduled_at",
+              "value": "={{ $json.scheduled_at || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7f722492-e753-479d-8a55-b4ad770be159",
+      "name": "Checks and schedules",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1480, 200]
+    }
+  ],
+  "connections": {
+    "Run by hand": {
+      "main": [
+        [
+          {
+            "node": "Your settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Your settings": {
+      "main": [
+        [
+          {
+            "node": "Import video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Import video": {
+      "main": [
+        [
+          {
+            "node": "Publish to TikTok",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Publish to Instagram Reels",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Publish to YouTube Shorts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish to TikTok": {
+      "main": [
+        [
+          {
+            "node": "Collect the answers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish to Instagram Reels": {
+      "main": [
+        [
+          {
+            "node": "Collect the answers",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Publish to YouTube Shorts": {
+      "main": [
+        [
+          {
+            "node": "Collect the answers",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Collect the answers": {
+      "main": [
+        [
+          {
+            "node": "Sent now?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sent now?": {
+      "main": [
+        [
+          {
+            "node": "Read the post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Checks and schedules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read the post": {
+      "main": [
+        [
+          {
+            "node": "Live yet?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Live yet?": {
+      "main": [
+        [
+          {
+            "node": "Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 30 seconds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 30 seconds": {
+      "main": [
+        [
+          {
+            "node": "Read the post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
