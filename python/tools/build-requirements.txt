@@ -1,0 +1,5 @@
+# The tools that build and check the package (python -m build, twine check) in CI
+# (.github/workflows/ci.yml) and in the release (.github/workflows/publish-python.yml). Pinned, so a
+# release is built the way CI built it; the build backend itself is pyproject.toml's hatchling.
+build==1.6.1
+twine==7.0.0

@@ -1,0 +1,12 @@
+# Settings for openapi-python-client 0.29.1, which writes src/status200uploads/_generated from
+# openapi/openapi.yaml (through tools/v2_only.py). Run ../scripts/regenerate-python.sh; never edit the
+# generated files by hand.
+project_name_override: status200uploads
+package_name_override: status200uploads
+# Enums become typing.Literal strings ("tiktok", "PUBLIC_TO_EVERYONE"), not Enum classes.
+literal_enums: true
+# The generator's defaults, spelled out. They run inside the output folder, so ruff reads
+# python/pyproject.toml ([tool.ruff]: Python 3.11, LF line endings).
+post_hooks:
+  - ruff check . --fix-only --extend-select=I
+  - ruff format .

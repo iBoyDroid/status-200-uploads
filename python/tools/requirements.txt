@@ -1,0 +1,6 @@
+# The tools that write src/status200uploads/_generated (../../scripts/regenerate-python.sh).
+# Pinned: a different generator or ruff version writes different code, and CI regenerates and
+# fails on any difference.
+openapi-python-client==0.29.1
+ruff==0.16.9
+ruamel.yaml==0.19.1
