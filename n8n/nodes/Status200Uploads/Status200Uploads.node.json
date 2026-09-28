@@ -1,0 +1,18 @@
+{
+	"node": "@status200uploads/n8n-nodes-status200uploads",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Marketing & Content"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://status200uploads.com/docs/api#authentication"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://status200uploads.com/docs/api#guide-n8n"
+			}
+		]
+	}
+}

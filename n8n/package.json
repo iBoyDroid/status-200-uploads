@@ -1,0 +1,75 @@
+{
+	"name": "@status200uploads/n8n-nodes-status200uploads",
+	"version": "0.1.0",
+	"description": "Publish and schedule posts to TikTok, Instagram, Facebook, YouTube, X, LinkedIn, Pinterest, Threads and Skool from n8n with Status 200 Uploads.",
+	"license": "MIT",
+	"homepage": "https://status200uploads.com/docs/api#guide-n8n",
+	"keywords": [
+		"n8n-community-node-package",
+		"n8n",
+		"status200uploads",
+		"social media",
+		"scheduling",
+		"tiktok",
+		"instagram",
+		"youtube",
+		"linkedin",
+		"pinterest"
+	],
+	"author": {
+		"name": "iBoyDroid",
+		"email": "info@status200uploads.com",
+		"url": "https://github.com/iBoyDroid"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/iBoyDroid/status-200-uploads.git",
+		"directory": "n8n"
+	},
+	"bugs": {
+		"url": "https://github.com/iBoyDroid/status-200-uploads/issues"
+	},
+	"publishConfig": {
+		"access": "public",
+		"provenance": true
+	},
+	"scripts": {
+		"build": "n8n-node build",
+		"build:watch": "tsc --watch",
+		"dev": "n8n-node dev",
+		"lint": "n8n-node lint",
+		"lint:fix": "n8n-node lint --fix",
+		"release": "n8n-node release",
+		"prepublishOnly": "n8n-node prerelease",
+		"test": "vitest run",
+		"typecheck": "tsc --noEmit -p tsconfig.test.json"
+	},
+	"files": [
+		"dist",
+		"!dist/tsconfig.tsbuildinfo"
+	],
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"strict": true,
+		"credentials": [
+			"dist/credentials/Status200UploadsApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/Status200Uploads/Status200Uploads.node.js"
+		]
+	},
+	"devDependencies": {
+		"@n8n/node-cli": "^0.49.1",
+		"ajv": "8.20.0",
+		"ajv-formats": "3.0.1",
+		"eslint": "9.39.4",
+		"prettier": "3.8.3",
+		"release-it": "20.2.0",
+		"typescript": "5.9.3",
+		"vitest": "4.1.11",
+		"yaml": "2.9.1"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	}
+}
