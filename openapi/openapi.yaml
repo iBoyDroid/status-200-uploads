@@ -1,0 +1,2921 @@
+openapi: 3.1.0
+# Status 200 Uploads REST API: the OpenAPI 3.1 description of both addresses.
+#
+# House rules for this file (they keep generated clients working when the API grows):
+#   - response codes, statuses and outcomes are plain strings with x-known-values, never enums: new
+#     codes are added without notice;
+#   - no additionalProperties: false anywhere: the API answers unknown request fields with warnings,
+#     and answers may gain fields;
+#   - oneOf only where a required field separates the variants;
+#   - one spelling per request field (boardId, mediaID, dryRun); the aliases are named in descriptions;
+#   - REST refusals carry code, message and (for a plan refusal) upgrade_url. There is no next_step and
+#     no retry rule in them: those belong to the AI connector. What a client may resend is the table
+#     components.x-status200-retry.
+info:
+  title: Status 200 Uploads API
+  version: '2026-09-28'
+  summary: Publish and schedule posts to TikTok, Instagram, Facebook, YouTube, X, LinkedIn, Pinterest, Threads and Skool.
+  description: >-
+    One request publishes (or schedules, with post.scheduledFor) one post to one network from one
+    profile. Media is imported first (POST /media) and sent as its file_id, or sent as public URLs.
+    The reads (GET /accounts, /accounts/{profile_id}/options, /posts, /posts/{id}) are on the main
+    address only.
+
+
+    Two addresses serve the same engine. The main address is https://status200uploads.com/api/v2
+    and answers every request within about 25 seconds. The older address
+    https://app.status200uploads.com/functions/v1 (the paths tagged "Older address", each with its
+    own server) takes the same POST and DELETE, waits up to 90 seconds for media that is still
+    importing, and says a few refusals in other codes; its differences are in each of its operations.
+
+
+    Safe retries: a POST may carry an Idempotency-Key header; the same key with the same body within
+    24 hours gets the first answer again with Idempotent-Replayed: true, and nothing is posted twice.
+    Which answers a client may send again, and how, is the table components.x-status200-retry.
+  contact:
+    name: Status 200 Uploads
+    email: info@status200uploads.com
+    url: https://status200uploads.com/support
+  termsOfService: https://status200uploads.com/terms
+externalDocs:
+  description: API documentation
+  url: https://status200uploads.com/docs/api
+servers:
+  - url: https://status200uploads.com/api/v2
+    description: The API.
+security:
+  - apiKey: []
+tags:
+  - name: Posts
+    description: Publish, schedule, check (dry run), cancel and read posts.
+  - name: Accounts
+    description: Your profiles, their connected networks, and what each network allows.
+  - name: Media
+    description: Import an image or a video from a URL, and follow the import.
+  - name: Older address
+    description: >-
+      https://app.status200uploads.com/functions/v1: the same engine as /api/v2/posts and the same media
+      handler as /api/v2/media, kept for the callers that use it. No reads here (a GET of api-posts is 405).
+x-status200-unknown-path:
+  status: 404
+  code: not_found
+  response: '#/components/responses/NotFound'
+
+paths:
+  /posts:
+    description: >-
+      POST publishes, schedules or checks a post; GET lists your posts. OPTIONS answers 200 with CORS
+      only.
+    x-status200-other-methods:
+      status: 405
+      code: method_not_allowed
+      response: '#/components/responses/MethodNotAllowed'
+      note: Any other method on /api/v2/posts (PUT, PATCH, DELETE without an id).
+    post:
+      operationId: createPost
+      tags: [Posts]
+      summary: Publish, schedule or check a post
+      description: >-
+        One post to one network. Without post.scheduledFor (or with a time within 60 seconds) it is
+        published now; more than 60 seconds ahead (up to 365 days) it is scheduled and the answer is
+        202 with code "scheduled". With dryRun true every check a publish makes is run and nothing is
+        sent: the answer is 200 with dry_run true.
+
+
+        Order of checks on this address: method, JSON, key, dryRun flag
+        (a dry run is forwarded here), post, platform, YouTube tags, scheduledFor, Idempotency-Key,
+        accountId, profile (403 or 400), media ids exist (404); then the engine: the X/Skool plan gate (403), the 20-second
+        throttle (429), connection, media wait (about 12 seconds here, then 409), pre-post guards,
+        the scheduled branch (202), the allowance (429 monthly or 202 queued), the send.
+
+
+        Media is required except for text posts on X, LinkedIn, Threads, Skool and Facebook. Every
+        answer arrives within about 25 seconds; a network slower than that is answered 202
+        still_publishing. Every 2xx may carry warnings (fields that were not used) and, when a post or a
+        scheduled post was recorded, status200.
+
+
+        A network's own refusal keeps the network's own 4xx status: pinterest_rejected (Pinterest) and
+        x_rejected (X) are listed under every status those networks answer with.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostRequest'
+            examples:
+              instagramReel:
+                summary: An Instagram Reel from an imported file
+                value:
+                  post:
+                    accountId: '@myprofile'
+                    platform: instagram
+                    content:
+                      text: 'Check out this reel! #trending'
+                      mediaID: [a1b2c3d4-e5f6-7890-abcd-ef1234567890]
+                    instagram:
+                      postType: reel
+                      shareToFeed: true
+              scheduledTikTok:
+                summary: A TikTok video scheduled for later
+                value:
+                  post:
+                    accountId: '@myprofile'
+                    platform: tiktok
+                    scheduledFor: '2026-10-01T09:00:00Z'
+                    content:
+                      text: Coming Thursday
+                      mediaID: [a1b2c3d4-e5f6-7890-abcd-ef1234567890]
+                    tiktok:
+                      privacyLevel: PUBLIC_TO_EVERYONE
+              linkedinText:
+                summary: A LinkedIn text post
+                value:
+                  post:
+                    accountId: d4e5f6a7-b8c9-0123-def0-234567890123
+                    platform: linkedin
+                    content:
+                      text: Hello from the API
+              dryRun:
+                summary: Check a Pinterest pin without sending it
+                value:
+                  dryRun: true
+                  post:
+                    accountId: '@myprofile'
+                    platform: pinterest
+                    content:
+                      text: Recipe of the week
+                      mediaUrls: ['https://example.com/pin.jpg']
+                    pinterest:
+                      boardId: '900123'
+      responses:
+        '200':
+          $ref: '#/components/responses/Published'
+        '202':
+          $ref: '#/components/responses/Accepted'
+        '400':
+          description: The request cannot be sent as it is. Nothing was sent.
+          x-error-codes: [bad_request, api_error, scheduled_for_invalid, youtube_tags_too_long, idempotency_key_invalid, profile_name_ambiguous, pinterest_board_required, media_wrong_for_post_type, options_outside_post, media_not_available, video_size_unknown, no_container, no_publish_id, pinterest_sandbox_board, pinterest_rejected, x_rejected, skool_rejected, category_required]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: >-
+            unauthorized: no key, or a key that is not active. A network that no longer accepts the
+            profile's sign-in answers 401 with its own code: reconnect_required (Facebook, LinkedIn,
+            Skool), RECONNECT_REQUIRED (Instagram), REFRESH_TOKEN_EXPIRED (TikTok), NO_TOKEN (Instagram,
+            TikTok), pinterest_auth_failed, x_rejected: reconnect it on the Connections page.
+            TOKEN_REFRESH_FAILED (Instagram, TikTok): the sign-in could not be renewed just now; try again
+            later, and reconnect the network if it keeps failing.
+          x-error-codes: [unauthorized, reconnect_required, RECONNECT_REQUIRED, REFRESH_TOKEN_EXPIRED, NO_TOKEN, TOKEN_REFRESH_FAILED, pinterest_auth_failed, x_rejected]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: >-
+            account_not_found (error.profiles lists yours), plan_required (Skool needs Beginner or
+            higher, X needs the X add-on; error.required, error.platform, error.upgrade_url), or the
+            network's own refusal.
+          x-error-codes: [account_not_found, plan_required, pinterest_rejected, x_rejected, forbidden]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: >-
+            A mediaID that does not exist on your account (answered at once, error.file_id), or the
+            network's own 404 (for example a Pinterest boardId that does not exist).
+          x-error-codes: [media_not_found, pinterest_rejected, x_rejected]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: >-
+            media_processing (a mediaID still importing after about 12 seconds; Retry-After 30),
+            scheduled_queue_full (500 posts already waiting), idempotency_in_progress (Retry-After 5),
+            idempotency_outcome_unknown, or the network's own 409.
+          x-error-codes: [media_processing, scheduled_queue_full, idempotency_in_progress, idempotency_outcome_unknown, pinterest_rejected, x_rejected]
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: The file is larger than the chosen network accepts. Nothing was sent to it.
+          x-error-codes: [MEDIA_TOO_LARGE]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: >-
+            media_failed (the mediaID's import failed), idempotency_key_reused (the key was used for
+            another body), a TikTok photo that cannot be sent as JPEG, or the network's own 422.
+          x-error-codes: [media_failed, idempotency_key_reused, photo_format_not_supported, photo_too_large_to_convert, photo_conversion_failed, pinterest_rejected, x_rejected]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/PostsTooManyRequests'
+        '500':
+          description: >-
+            server_error: our side failed (read the message; with an Idempotency-Key an answer whose
+            outcome is not known is replayed). platform_error: a network's 5xx that named no code; a
+            LinkedIn refusal (for example a duplicate post) arrives this way too, with LinkedIn's reason
+            in the message, and is kept under an Idempotency-Key. api_error: the post could not be
+            queued for the next day.
+          x-error-codes: [server_error, platform_error, api_error]
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: >-
+            upstream_unavailable: the request never left, nothing was posted. upload_worker_failed: our
+            upload of a TikTok video stopped. platform_error: a gateway's 502 without a code of its own.
+          x-error-codes: [upstream_unavailable, upload_worker_failed, platform_error]
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/PostsUnavailable'
+        default:
+          $ref: '#/components/responses/Default'
+    get:
+      operationId: listPosts
+      tags: [Posts]
+      summary: List your posts and waiting posts
+      description: >-
+        Newest first by `at` (when a post was sent, when a scheduled post is due). A scheduled post is
+        listed until it has produced posts; then each network's post is listed instead, with its
+        scheduled_post_id. 60 reads a minute per account (all its keys together). Not counted in the
+        key's request count, and a 200 is not logged.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/StatusFilter'
+        - $ref: '#/components/parameters/PlatformFilter'
+        - $ref: '#/components/parameters/KindFilter'
+        - $ref: '#/components/parameters/ProfileIdFilter'
+      responses:
+        '200':
+          description: One page.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Vary:
+              $ref: '#/components/headers/Vary'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostList'
+        '400':
+          $ref: '#/components/responses/ReadBadRequest'
+        '401':
+          $ref: '#/components/responses/ReadUnauthorized'
+        '429':
+          $ref: '#/components/responses/ReadTooManyRequests'
+        '500':
+          $ref: '#/components/responses/ReadServerError'
+        default:
+          $ref: '#/components/responses/Default'
+
+  /posts/{id}:
+    description: >-
+      One post or scheduled post. Any method other than GET and DELETE, and any deeper path, is the JSON
+      404 not_found.
+    x-status200-other-methods:
+      status: 404
+      code: not_found
+      response: '#/components/responses/NotFound'
+      note: Any method other than GET and DELETE, and any path deeper than one id.
+    parameters:
+      - $ref: '#/components/parameters/PostId'
+    get:
+      operationId: getPost
+      tags: [Posts]
+      summary: Read one post or scheduled post
+      description: >-
+        The id is status200.post_id or status200.scheduled_post_id of a POST answer (its
+        status200.status_url is this address), or an id from GET /posts. To wait for a post, read it
+        every 30 seconds until done is true, for up to 10 minutes. Another account's id is answered
+        exactly like an id that does not exist.
+      responses:
+        '200':
+          description: A post (with figures) or a scheduled post (with results).
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Vary:
+              $ref: '#/components/headers/Vary'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostRead'
+        '400':
+          $ref: '#/components/responses/ReadBadRequest'
+        '401':
+          $ref: '#/components/responses/ReadUnauthorized'
+        '404':
+          description: No post or scheduled post with that id on your account.
+          x-error-codes: [post_not_found]
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/ReadTooManyRequests'
+        '500':
+          $ref: '#/components/responses/ReadServerError'
+        default:
+          $ref: '#/components/responses/Default'
+    delete:
+      operationId: cancelScheduledPost
+      tags: [Posts]
+      summary: Cancel a post that has not gone out
+      description: >-
+        The id is a scheduled_post_id (from a 202 scheduled or queued answer, or any waiting post of
+        yours: API, dashboard, AI connector or the next-day queue). No body. Cancelling twice is safe:
+        the second answer is 200 with already_cancelled true. The key is checked first (401), then the
+        id (400), then the engine cancels it.
+        The Idempotency-Key header is ignored.
+      responses:
+        '200':
+          description: Cancelled (or already cancelled).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelResult'
+        '400':
+          description: The id is not a UUID.
+          x-error-codes: [bad_request]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: No key, or a key that is not active.
+          x-error-codes: [unauthorized]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No scheduled post with that id on your account.
+          x-error-codes: [post_not_found]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: >-
+            not_cancellable: it is being published, was published or failed (error.status says which),
+            or it cannot be cancelled with an API key (error.status scheduled). Nothing changed.
+          x-error-codes: [not_cancellable]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: The cancel could not be done just now. Send it again.
+          x-error-codes: [server_error]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: The request never reached the engine. Send it again.
+          x-error-codes: [upstream_unavailable]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: No answer in time. Send the same DELETE again after Retry-After (5).
+          x-error-codes: [cancel_unconfirmed]
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          $ref: '#/components/responses/Default'
+
+  /accounts:
+    x-status200-other-methods:
+      status: 405
+      code: method_not_allowed
+      response: '#/components/responses/ReadMethodNotAllowed'
+      note: Any method but GET (Allow GET, OPTIONS), answered before the key is read.
+    get:
+      operationId: listAccounts
+      tags: [Accounts]
+      summary: List your profiles and their connected networks
+      description: >-
+        Up to 100 profiles, oldest first, each with its networks (sorted by name) and whether each can
+        post now (health). No parameters: an unknown one is named in warnings and not used.
+      responses:
+        '200':
+          description: Your profiles.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Vary:
+              $ref: '#/components/headers/Vary'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountList'
+        '401':
+          $ref: '#/components/responses/ReadUnauthorized'
+        '429':
+          $ref: '#/components/responses/ReadTooManyRequests'
+        '500':
+          $ref: '#/components/responses/ReadServerError'
+        default:
+          $ref: '#/components/responses/Default'
+
+  /accounts/{profile_id}/options:
+    x-status200-other-methods:
+      status: 405
+      code: method_not_allowed
+      response: '#/components/responses/ReadMethodNotAllowed'
+      note: Any method but GET (Allow GET, OPTIONS), answered before the key is read.
+    parameters:
+      - $ref: '#/components/parameters/ProfileId'
+    get:
+      operationId: getPostingOptions
+      tags: [Accounts]
+      summary: What a profile may do on each network
+      description: >-
+        Asked of the networks themselves with the profile's own sign-in: the TikTok privacy levels it
+        accepts, Pinterest boards, Skool groups and labels, the Facebook Page, the Instagram publishing
+        limit, YouTube's choices. One row per network, always 200 (a network that fails is a row).
+        Answers are reused for 90 seconds, and the whole answer is ready within 20 seconds. Also 10 a
+        minute per account, on top of the 60 reads.
+      parameters:
+        - $ref: '#/components/parameters/PlatformsFilter'
+        - $ref: '#/components/parameters/SkoolGroupSlug'
+      responses:
+        '200':
+          description: One row per network.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Vary:
+              $ref: '#/components/headers/Vary'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostingOptions'
+        '400':
+          $ref: '#/components/responses/ReadBadRequest'
+        '401':
+          $ref: '#/components/responses/ReadUnauthorized'
+        '404':
+          description: No profile with that id on your account. No network was asked.
+          x-error-codes: [account_not_found]
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/ReadTooManyRequests'
+        '500':
+          $ref: '#/components/responses/ReadServerError'
+        default:
+          $ref: '#/components/responses/Default'
+
+  /media:
+    description: >-
+      POST imports a file from a URL; GET ?file_id= follows an import. Errors of this endpoint have
+      the older shape {"error": "sentence"} (MediaError). OPTIONS answers 200 with CORS only.
+    x-status200-other-methods:
+      status: 405
+      response: '#/components/responses/MediaMethodNotAllowed'
+      note: Any method but GET and POST.
+    post:
+      operationId: importMedia
+      tags: [Media]
+      summary: Import an image or a video from a URL
+      description: >-
+        Images up to 20 MB, videos up to 5 GB. The source is probed first (a HEAD, then a 1-byte ranged
+        GET, 8 seconds each, so up to about 16 seconds). The request waits up to about 22 seconds for
+        the import: 200 ready, otherwise 202 processing (at once when the declared size cannot finish in
+        time). One import every 20 seconds per account. Files are kept for 7 days, and until a scheduled
+        post that uses them goes out.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaImportRequest'
+      responses:
+        '200':
+          description: The import finished while the request was open.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaImportReady'
+        '202':
+          description: The import continues in the background. Poll GET /media?file_id= until status is ready.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaImportStarted'
+        '400':
+          description: >-
+            Invalid JSON body, URL is required, a URL that is blocked or not http(s), the file could not
+            be downloaded ("Failed to download file: ..."), or idempotency_key_invalid.
+          x-error-codes: [idempotency_key_invalid]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '401':
+          description: Missing or invalid Authorization header, or a key that is revoked.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '409':
+          description: The first import with this Idempotency-Key is still running (Retry-After 5), or never answered.
+          x-error-codes: [idempotency_in_progress, idempotency_outcome_unknown]
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '413':
+          description: >-
+            Image larger than 20 MB or video larger than 5 GB (error.size), or the storage refused the
+            file after the import started (file_id, status "failed", size).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '415':
+          description: The URL does not return an image or a video. Nothing is imported.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '422':
+          description: This Idempotency-Key was used in the last 24 hours for another body (first_used_at).
+          x-error-codes: [idempotency_key_reused]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '429':
+          description: >-
+            rate_limited: less than 20 seconds since your previous import (Retry-After and
+            retry_after_seconds). import_budget_exhausted (AI connector keys only): error is an object.
+          x-error-codes: [rate_limited, import_budget_exhausted]
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '500':
+          description: The import could not be started, or it failed while the request was open.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '503':
+          description: The Idempotency-Key could not be checked. Nothing was imported (Retry-After 5).
+          x-error-codes: [idempotency_unavailable]
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        default:
+          $ref: '#/components/responses/MediaDefault'
+    get:
+      operationId: getMediaStatus
+      tags: [Media]
+      summary: Follow an import
+      description: Status checks are not throttled and not counted.
+      parameters:
+        - $ref: '#/components/parameters/FileId'
+      responses:
+        '200':
+          description: The import's status. Its `error` is the import's failure reason, not an error of this request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaStatus'
+        '400':
+          description: file_id missing, or not a UUID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '401':
+          description: Missing or invalid Authorization header, or a key that is revoked.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '404':
+          description: No media with this file_id on your account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '500':
+          description: The status could not be read.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        default:
+          $ref: '#/components/responses/MediaDefault'
+
+  /api-posts:
+    servers:
+      - url: https://app.status200uploads.com/functions/v1
+        description: The older address (Supabase edge functions on the custom API domain).
+    x-status200-address: older
+    description: >-
+      The engine itself. POST publishes on this path (and, for historical reasons, on any path under
+      it: send it here). Any other method is 405 api_error, except DELETE with one id (below);
+      OPTIONS answers 200 with no body.
+    x-status200-other-methods:
+      status: 405
+      code: api_error
+      response: '#/components/responses/OlderMethodNotAllowed'
+      note: GET, PUT, PATCH and DELETE without an id. The reads are on /api/v2 only.
+    post:
+      operationId: olderCreatePost
+      tags: [Older address]
+      summary: Publish, schedule or check a post (older address)
+      description: >-
+        The same request and the same 2xx answers as POST /api/v2/posts, through the same engine. The
+        differences: the key is read before the JSON; invalid JSON, a missing post, accountId or platform
+        and a bad dryRun flag are 400 api_error (other words); 401 is api_error; the plan gate (403) and
+        the 20-second throttle (429) come before the profile; an unknown profile is 404 api_error with
+        error.profiles (not 403 account_not_found); "No media provided" and a media field sent as text
+        are api_error without the Facebook hint; a network's error is passed on as it is, so error.code
+        can be missing; media still importing is waited for up to 90 seconds (the request can stay open
+        about two minutes) and its 409 names GET /api-media-upload?file_id=; the answer is not bounded
+        by 25 seconds, so there is no still_publishing from a timeout of ours and no 502
+        upstream_unavailable, 503 dry_run_unavailable or 202 schedule_unconfirmed. It shares
+        Idempotency-Keys with /api/v2/posts.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Published'
+        '202':
+          $ref: '#/components/responses/Accepted'
+        '400':
+          description: The request cannot be sent as it is. Nothing was sent.
+          x-error-codes: [api_error, bad_request, scheduled_for_invalid, youtube_tags_too_long, idempotency_key_invalid, profile_name_ambiguous, pinterest_board_required, media_wrong_for_post_type, options_outside_post, media_not_available, video_size_unknown, no_container, no_publish_id, pinterest_sandbox_board, pinterest_rejected, x_rejected, skool_rejected, category_required]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '401':
+          description: >-
+            api_error: "Missing Authorization: Bearer <api_key>" or "Invalid or inactive API key"; or a
+            network sign-in it no longer accepts, with the same codes as on /api/v2/posts.
+          x-error-codes: [api_error, reconnect_required, RECONNECT_REQUIRED, REFRESH_TOKEN_EXPIRED, NO_TOKEN, TOKEN_REFRESH_FAILED, pinterest_auth_failed, x_rejected]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '403':
+          description: plan_required, or the network's own refusal.
+          x-error-codes: [plan_required, pinterest_rejected, x_rejected, forbidden]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '404':
+          description: >-
+            An unknown profile (api_error with error.profiles), a mediaID that does not exist
+            (media_not_found), or the network's own 404.
+          x-error-codes: [api_error, media_not_found, pinterest_rejected, x_rejected]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '409':
+          description: As on /api/v2/posts; media_processing after up to 90 seconds.
+          x-error-codes: [media_processing, scheduled_queue_full, idempotency_in_progress, idempotency_outcome_unknown, pinterest_rejected, x_rejected]
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '413':
+          description: The file is larger than the chosen network accepts.
+          x-error-codes: [MEDIA_TOO_LARGE]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '422':
+          description: As on /api/v2/posts.
+          x-error-codes: [media_failed, idempotency_key_reused, photo_format_not_supported, photo_too_large_to_convert, photo_conversion_failed, pinterest_rejected, x_rejected]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '429':
+          $ref: '#/components/responses/PostsTooManyRequests'
+        '500':
+          description: >-
+            server_error, or api_error (the post could not be queued for the next day; "Server
+            configuration error"), or a network's own 500, passed on as it is (error.code can be missing;
+            a LinkedIn refusal, such as a duplicate post, is one of these).
+          x-error-codes: [server_error, api_error]
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '502':
+          description: upload_worker_failed (our upload of a TikTok video stopped), or a gateway's own 502.
+          x-error-codes: [upload_worker_failed]
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '503':
+          description: Nothing was posted; send it again after Retry-After when it is sent (5 seconds).
+          x-error-codes: [caller_check_unavailable, schedule_check_unavailable, idempotency_unavailable, skool_unavailable, x_unavailable]
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        default:
+          $ref: '#/components/responses/OlderDefault'
+
+  /api-posts/{id}:
+    servers:
+      - url: https://app.status200uploads.com/functions/v1
+        description: The older address.
+    x-status200-address: older
+    description: >-
+      DELETE cancels. A path deeper than one id is 404 not_found. Do not POST here: POST publishes on
+      any path under /api-posts (use POST /api-posts).
+    x-status200-other-methods:
+      status: 405
+      code: api_error
+      response: '#/components/responses/OlderMethodNotAllowed'
+      note: 'GET, PUT and PATCH. (A POST here publishes, as on /api-posts: send it to /api-posts.)'
+    parameters:
+      - $ref: '#/components/parameters/PostId'
+    delete:
+      operationId: olderCancelScheduledPost
+      tags: [Older address]
+      summary: Cancel a post that has not gone out (older address)
+      description: >-
+        The same cancel as DELETE /api/v2/posts/{id}, with the engine's own words for a missing or
+        invalid key (401 api_error). No 502 or 504 of v2's own.
+      responses:
+        '200':
+          description: Cancelled (or already cancelled).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelResult'
+        '400':
+          description: The id is not a UUID.
+          x-error-codes: [bad_request]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '401':
+          description: No key, or a key that is not active.
+          x-error-codes: [api_error]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '404':
+          description: No scheduled post with that id on your account (post_not_found), or a deeper path (not_found).
+          x-error-codes: [post_not_found, not_found]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '409':
+          description: It is being published, was published or failed (error.status), or it cannot be cancelled with an API key.
+          x-error-codes: [not_cancellable]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        '500':
+          description: The cancel could not be done just now. Send it again.
+          x-error-codes: [server_error, api_error]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OlderErrorResponse'
+        default:
+          $ref: '#/components/responses/OlderDefault'
+
+  /api-media-upload:
+    servers:
+      - url: https://app.status200uploads.com/functions/v1
+        description: The older address.
+    x-status200-address: older
+    description: >-
+      A proxy to /api/v2/media: the same two requests and, byte for byte, the same answers, with
+      Retry-After and Idempotent-Replayed passed on. Its own answers: 405 {"error": "Method Not
+      Allowed"} for a method but GET and POST, 400 idempotency_key_invalid, and 500 {"error": message}
+      when the proxy itself fails. OPTIONS answers 200 "ok".
+    x-status200-other-methods:
+      status: 405
+      response: '#/components/responses/MediaMethodNotAllowed'
+      note: Any method but GET and POST.
+    post:
+      operationId: olderImportMedia
+      tags: [Older address]
+      summary: Import an image or a video from a URL (older address)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaImportRequest'
+      responses:
+        '200':
+          description: As POST /api/v2/media.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaImportReady'
+        '202':
+          description: As POST /api/v2/media.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaImportStarted'
+        '400':
+          description: As POST /api/v2/media.
+          x-error-codes: [idempotency_key_invalid]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '401':
+          description: As POST /api/v2/media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '409':
+          description: As POST /api/v2/media.
+          x-error-codes: [idempotency_in_progress, idempotency_outcome_unknown]
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '413':
+          description: As POST /api/v2/media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '415':
+          description: As POST /api/v2/media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '422':
+          description: As POST /api/v2/media.
+          x-error-codes: [idempotency_key_reused]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '429':
+          description: As POST /api/v2/media.
+          x-error-codes: [rate_limited, import_budget_exhausted]
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '500':
+          description: As POST /api/v2/media, or the proxy's own failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '503':
+          description: As POST /api/v2/media.
+          x-error-codes: [idempotency_unavailable]
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        default:
+          $ref: '#/components/responses/OlderMediaDefault'
+    get:
+      operationId: olderGetMediaStatus
+      tags: [Older address]
+      summary: Follow an import (older address)
+      parameters:
+        - $ref: '#/components/parameters/FileId'
+      responses:
+        '200':
+          description: As GET /api/v2/media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaStatus'
+        '400':
+          description: As GET /api/v2/media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '401':
+          description: As GET /api/v2/media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '404':
+          description: As GET /api/v2/media.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        '500':
+          description: As GET /api/v2/media, or the proxy's own failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaError'
+        default:
+          $ref: '#/components/responses/OlderMediaDefault'
+
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      bearerFormat: rl_ API key
+      description: >-
+        Authorization: Bearer rl_... An API key from the dashboard (API page), active. The word Bearer is
+        read in any capital letters at every address. The same key works at both addresses.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: >-
+        Optional, POST only. 1 to 255 printable ASCII characters naming this one request (a UUID, for
+        example); spaces around it and one pair of double quotes are removed, and an empty value is
+        refused (400 idempotency_key_invalid). The same key with the same JSON body within 24 hours of
+        the first request gets the first answer again, byte for byte, with Idempotent-Replayed: true.
+        A key belongs to the API key that sent it; posts and media are kept apart; the two posts
+        addresses share keys, and so do the two media addresses. Dry runs ignore it.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+        pattern: '^[\x20-\x7E]+$'
+      example: 8e03978e-40d5-43e8-bc93-6894a57f9324
+    PostId:
+      name: id
+      in: path
+      required: true
+      description: A post id (status200.post_id) or a scheduled post id (status200.scheduled_post_id). Not a UUID is 400.
+      schema:
+        type: string
+        format: uuid
+    ProfileId:
+      name: profile_id
+      in: path
+      required: true
+      description: A profile id from GET /accounts. Not a UUID is 400 (error.parameter id).
+      schema:
+        type: string
+        format: uuid
+    FileId:
+      name: file_id
+      in: query
+      required: true
+      description: The file_id from POST /media. Missing or not a UUID is 400.
+      schema:
+        type: string
+        format: uuid
+    Limit:
+      name: limit
+      in: query
+      description: Items per page, 1 to 100.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Cursor:
+      name: cursor
+      in: query
+      description: next_cursor from the previous page, exactly as it came. A cursor that is not ours is 400 (never "start again").
+      schema:
+        type: string
+    StatusFilter:
+      name: status
+      in: query
+      description: >-
+        One or more, comma-separated. success, processing and timeout are posts; scheduled and
+        cancelled are scheduled posts; failed is both. "published" is 400 with a hint (a scheduled post
+        that went out is listed as its posts: use success).
+      style: form
+      explode: false
+      schema:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          enum: [success, failed, processing, timeout, scheduled, cancelled]
+    PlatformFilter:
+      name: platform
+      in: query
+      description: One network. A scheduled post is listed when it includes it.
+      schema:
+        $ref: '#/components/schemas/Platform'
+    KindFilter:
+      name: kind
+      in: query
+      schema:
+        type: string
+        enum: [post, scheduled_post]
+    ProfileIdFilter:
+      name: profile_id
+      in: query
+      description: Only this profile (a UUID from GET /accounts).
+      schema:
+        type: string
+        format: uuid
+    PlatformsFilter:
+      name: platforms
+      in: query
+      description: Only these networks, comma-separated; they are answered connected or not. Default every connected network.
+      style: form
+      explode: false
+      schema:
+        type: array
+        minItems: 1
+        items:
+          $ref: '#/components/schemas/Platform'
+    SkoolGroupSlug:
+      name: skool_group_slug
+      in: query
+      description: Which Skool group to read the labels of (1 to 200 characters). With exactly one group, its labels come anyway.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 200
+
+  headers:
+    RetryAfter:
+      description: >-
+        Seconds to wait before the same request can succeed. On a 429 it is sent only when the wait is
+        3600 seconds or less (a longer one is only in error.retry_after_seconds); 409 media_processing 30,
+        409 idempotency_in_progress 5, the 503s that say nothing was sent 5, 504 cancel_unconfirmed 5.
+      schema:
+        type: integer
+        minimum: 0
+    IdempotentReplayed:
+      description: '"true" on an answer that is the stored first answer to this Idempotency-Key, sent again.'
+      schema:
+        type: string
+        enum: ['true']
+    CacheControl:
+      description: >-
+        private, no-store: a read answers for one key's owner, so nothing between may keep it (Netlify
+        sends it as "private,no-store").
+      schema:
+        type: string
+        examples: ['private, no-store']
+    Vary:
+      schema:
+        type: string
+        enum: [Authorization]
+    Allow:
+      schema:
+        type: string
+        enum: ['GET, OPTIONS']
+
+  responses:
+    Published:
+      description: >-
+        The network accepted the post (the body is its result inside data, so its fields differ per
+        network), or a dry run's report (dry_run true). TikTok and Instagram finish after the answer:
+        data.status is "processing" and the result appears in History.
+      headers:
+        Idempotent-Replayed:
+          $ref: '#/components/headers/IdempotentReplayed'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/DryRunReport'
+              - $ref: '#/components/schemas/PublishResult'
+          examples:
+            tiktok:
+              summary: TikTok (processing; post_id is ours)
+              value:
+                data:
+                  status: processing
+                  post_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  publish_id: v_pub_url~v2-1.7123456789012345678
+                  message: Post is being processed. Check post history for updates.
+                status200:
+                  post_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/b2c3d4e5-f6a7-8901-bcde-f12345678901
+            instagram:
+              summary: Instagram (processing; post_id is ours)
+              value:
+                data:
+                  status: processing
+                  post_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  container_id: '17912345678901234'
+                  message: Post is being processed. Check post history for updates.
+                status200:
+                  post_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/b2c3d4e5-f6a7-8901-bcde-f12345678901
+            x:
+              summary: X
+              value:
+                data:
+                  tweet_id: '1841234567890123456'
+                  text: Hello from the API
+                  url: https://x.com/i/status/1841234567890123456
+                status200:
+                  post_id: e5f6a7b8-c9d0-1234-ef01-345678901234
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/e5f6a7b8-c9d0-1234-ef01-345678901234
+            linkedin:
+              summary: LinkedIn (post_id is LinkedIn's)
+              value:
+                data:
+                  post_id: urn:li:share:7212345678901234567
+                  url: https://www.linkedin.com/feed/update/urn:li:share:7212345678901234567
+                status200:
+                  post_id: e5f6a7b8-c9d0-1234-ef01-345678901234
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/e5f6a7b8-c9d0-1234-ef01-345678901234
+            pinterest:
+              summary: Pinterest
+              value:
+                data:
+                  pin_id: '1146236468384210033'
+                  url: https://www.pinterest.com/pin/1146236468384210033/
+                  title: Recipe of the week
+                  board_id: '900123'
+                status200:
+                  post_id: e5f6a7b8-c9d0-1234-ef01-345678901234
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/e5f6a7b8-c9d0-1234-ef01-345678901234
+            threads:
+              summary: Threads
+              value:
+                data:
+                  thread_id: '18045678901234567'
+                  permalink: https://www.threads.net/@myshop/post/C9abcdefgh
+                status200:
+                  post_id: e5f6a7b8-c9d0-1234-ef01-345678901234
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/e5f6a7b8-c9d0-1234-ef01-345678901234
+            skool:
+              summary: Skool (post_id is Skool's)
+              value:
+                data:
+                  post_id: 8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d
+                  url: https://www.skool.com/mygroup/my-first-post
+                status200:
+                  post_id: e5f6a7b8-c9d0-1234-ef01-345678901234
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/e5f6a7b8-c9d0-1234-ef01-345678901234
+            facebook:
+              summary: Facebook (Graph's own fields)
+              value:
+                data:
+                  id: '123456789012345_987654321098765'
+                  permalink: https://www.facebook.com/123456789012345/posts/987654321098765
+                status200:
+                  post_id: e5f6a7b8-c9d0-1234-ef01-345678901234
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/e5f6a7b8-c9d0-1234-ef01-345678901234
+            dryRun:
+              summary: A dry run's report
+              value:
+                dry_run: true
+                checked_at: '2026-09-28T10:00:00.000Z'
+                target:
+                  account_id: '@myprofile'
+                  profile_id: d4e5f6a7-b8c9-0123-def0-234567890123
+                  platform: pinterest
+                outcome: publish
+                would_publish: true
+                reason: null
+                warnings: []
+                plan:
+                  tier: skilled
+                  is_admin: false
+                  allowance:
+                    kind: unlimited
+                    used: null
+                    limit: null
+                    resets_at: null
+                media:
+                  count: 1
+                  type: image
+                  from: urls
+                checks:
+                  - name: request
+                    status: ok
+                  - name: profile
+                    status: ok
+    Accepted:
+      description: >-
+        Accepted, not published yet, and never a failure: do not send the request again (with the
+        same Idempotency-Key it only gets this answer back). If code is present, switch on code
+        (scheduled, queued_for_next_day, still_publishing, schedule_unconfirmed); otherwise data.status
+        is "processing" (every YouTube upload, large videos on X, LinkedIn, Facebook and Skool).
+      headers:
+        Idempotent-Replayed:
+          $ref: '#/components/headers/IdempotentReplayed'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Accepted'
+          examples:
+            scheduled:
+              summary: Scheduled for post.scheduledFor
+              value:
+                scheduled: true
+                code: scheduled
+                message: Scheduled for 2026-10-01T09:00:00.000Z. It will be published then, usually within a few minutes of that time. Your plan's allowance is checked when it goes out, not now. To cancel it, send DELETE https://status200uploads.com/api/v2/posts/c3d4e5f6-a7b8-9012-cdef-123456789012.
+                scheduled_post_id: c3d4e5f6-a7b8-9012-cdef-123456789012
+                scheduled_at: '2026-10-01T09:00:00.000Z'
+                platform: tiktok
+                profile_id: d4e5f6a7-b8c9-0123-def0-234567890123
+                data:
+                  status: scheduled
+                  scheduled_post_id: c3d4e5f6-a7b8-9012-cdef-123456789012
+                  scheduled_at: '2026-10-01T09:00:00.000Z'
+                status200:
+                  post_id: null
+                  scheduled_post_id: c3d4e5f6-a7b8-9012-cdef-123456789012
+                  status_url: https://status200uploads.com/api/v2/posts/c3d4e5f6-a7b8-9012-cdef-123456789012
+            queued:
+              summary: Queued for the next UTC day (daily allowance used up)
+              value:
+                queued: true
+                code: queued_for_next_day
+                message: Daily post limit reached for this profile (20/20 today, all platforms combined). Post queued for 2026-09-29T14:30:00.000Z.
+                upgrade_url: https://status200uploads.com/pricing
+                scheduled_post_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                scheduled_at: '2026-09-29T14:30:00.000Z'
+                limit: 20
+                used: 20
+                plan: beginner
+                status200:
+                  post_id: null
+                  scheduled_post_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                  status_url: https://status200uploads.com/api/v2/posts/a1b2c3d4-e5f6-7890-abcd-ef1234567890
+            stillPublishing:
+              summary: The network is slower than the request can wait
+              value:
+                success: false
+                status: unknown
+                code: still_publishing
+                retry: false
+                message: 'The network is taking longer than this request can wait, so the outcome is not known yet. Publishing continues in the background and the result appears in the post history within a few minutes. Do not send this request again: it may already have been published.'
+                post_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                status200:
+                  post_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/b2c3d4e5-f6a7-8901-bcde-f12345678901
+            processing:
+              summary: A YouTube upload (always in the background)
+              value:
+                data:
+                  status: processing
+                  post_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  job_id: f6a7b8c9-d0e1-2345-f012-456789012345
+                  message: YouTube upload is processing in the background. Check post history for updates.
+                status200:
+                  post_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/b2c3d4e5-f6a7-8901-bcde-f12345678901
+    PostsTooManyRequests:
+      description: >-
+        Every 429 carries error.retry_after_seconds. rate_limited: less than 20 seconds since your
+        previous post to the same network, or Skool's own limit (Retry-After). monthly_limit_reached
+        (Free), daily_limit_reached, x_limit_reached, x_link_limit_reached: not before resets_at (a
+        longer wait than an hour has no Retry-After header). daily_attempts_exceeded: after 00:00 UTC.
+        pinterest_rejected: Pinterest's own 429 (its rate limit), with Pinterest's reason.
+      x-error-codes: [rate_limited, monthly_limit_reached, daily_limit_reached, x_limit_reached, x_link_limit_reached, daily_attempts_exceeded, pinterest_rejected]
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    PostsUnavailable:
+      description: >-
+        Nothing was posted. caller_check_unavailable, schedule_check_unavailable,
+        idempotency_unavailable and dry_run_unavailable carry Retry-After 5 and retry_after_seconds 5:
+        send the same request again then. skool_unavailable, x_unavailable: the network is not taking
+        posts from us right now; try again later.
+      x-error-codes: [caller_check_unavailable, schedule_check_unavailable, idempotency_unavailable, dry_run_unavailable, skool_unavailable, x_unavailable]
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    MethodNotAllowed:
+      description: A method /api/v2/posts does not answer.
+      x-error-codes: [method_not_allowed]
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: There is no API endpoint at this path (the message lists the endpoints).
+      x-error-codes: [not_found]
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ReadMethodNotAllowed:
+      description: The accounts paths answer GET only.
+      x-error-codes: [method_not_allowed]
+      headers:
+        Allow:
+          $ref: '#/components/headers/Allow'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ReadBadRequest:
+      description: A parameter (or the id) cannot be used; error.parameter names it.
+      x-error-codes: [bad_request]
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ReadUnauthorized:
+      description: No key, or a key that is not active.
+      x-error-codes: [unauthorized]
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ReadTooManyRequests:
+      description: 60 reads a minute per account, or 10 posting options (error.limit says which).
+      x-error-codes: [rate_limited]
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ReadServerError:
+      description: It could not be read just now, and nothing changed. Try again in a minute.
+      x-error-codes: [server_error]
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    MediaMethodNotAllowed:
+      description: '{"error": "Method Not Allowed. Use POST /api/v2/media."} on /api/v2/media; {"error": "Method Not Allowed"} on the older address.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MediaError'
+    OlderMethodNotAllowed:
+      description: 'api_error "Method not allowed".'
+      x-error-codes: [api_error]
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OlderErrorResponse'
+    Default:
+      description: >-
+        Any other answer. On /api/v2 every JSON error carries error.code (derived from the status when
+        the network gave none). Not JSON at all: Netlify's HTML 504 after 30 seconds of silence (rare:
+        our answers come within about 25 seconds).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        text/html:
+          schema:
+            type: string
+    OlderDefault:
+      description: >-
+        Any other answer, including a network's own error passed on as it is. Not JSON at all: the
+        Supabase gateway's 504 or 546 after 150 seconds.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OlderErrorResponse'
+        text/html:
+          schema:
+            type: string
+        text/plain:
+          schema:
+            type: string
+    MediaDefault:
+      description: >-
+        Any other answer of /api/v2/media, in the media shape (MediaError). Not JSON at all: Netlify's
+        HTML 504 after 30 seconds of silence (rare: the import answers within about 22 seconds).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MediaError'
+        text/html:
+          schema:
+            type: string
+    OlderMediaDefault:
+      description: >-
+        Any other answer of the older media address, in the media shape (MediaError). Not JSON at all:
+        a gateway's HTML or plain-text page.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MediaError'
+        text/html:
+          schema:
+            type: string
+        text/plain:
+          schema:
+            type: string
+
+  schemas:
+    Platform:
+      type: string
+      enum: [tiktok, instagram, facebook, youtube, x, linkedin, pinterest, threads, skool]
+
+    PostRequest:
+      type: object
+      required: [post]
+      properties:
+        post:
+          $ref: '#/components/schemas/Post'
+        dryRun:
+          type: boolean
+          description: >-
+            true: check this post and send nothing (every check a publish makes; the answer is 200 with
+            dry_run true, and it is not counted in the key's request count). false or absent: publish.
+            Also read as dry_run, and inside post; a dry run may send the post as validate instead of
+            post. Any value but true or false (or true in one place and false in another) is 400 and
+            nothing is published.
+      description: >-
+        A field this API does not read never refuses a post: the answer names it in warnings.
+
+    Post:
+      type: object
+      required: [accountId, platform]
+      properties:
+        accountId:
+          type: string
+          minLength: 1
+          description: >-
+            The profile: its UUID, "@name" or the bare name, as on the Connections page (GET /accounts
+            lists them). Capital letters do not matter; two profiles whose names differ only by capital
+            letters are 400 profile_name_ambiguous (send the exact name or the id). A profile that is
+            not yours is 403 account_not_found (404 api_error on the older address).
+          examples: ['@myprofile', d4e5f6a7-b8c9-0123-def0-234567890123]
+        platform:
+          $ref: '#/components/schemas/Platform'
+        scheduledFor:
+          type: [string, number, 'null']
+          description: >-
+            When to publish. An ISO 8601 time
+            WITH a time zone ("2026-09-30T10:00:00Z", "2026-09-30T12:00:00+02:00"), a date with the
+            month as a word and a zone ("Wed, 30 Sep 2026 10:00:00 GMT"), or a Unix time in seconds or
+            milliseconds (from 1e11). Absent, null, "" or "now", a past time, or one within 60 seconds:
+            published now. More than 60 seconds and up to 365 days ahead: scheduled (202 scheduled; at
+            most 500 posts waiting per account). Otherwise 400 scheduled_for_invalid with error.reason
+            no_time_zone (even a past time without a zone), unreadable (not a date and time, a date
+            written with numbers only such as 01/10/2026 included) or too_far_ahead.
+          examples: ['2026-10-01T09:00:00Z', 1790000000]
+        content:
+          $ref: '#/components/schemas/PostContent'
+        tiktok:
+          $ref: '#/components/schemas/TikTokOptions'
+        instagram:
+          $ref: '#/components/schemas/InstagramOptions'
+        facebook:
+          $ref: '#/components/schemas/FacebookOptions'
+        youtube:
+          $ref: '#/components/schemas/YouTubeOptions'
+        x:
+          $ref: '#/components/schemas/XOptions'
+        linkedin:
+          $ref: '#/components/schemas/LinkedInOptions'
+        pinterest:
+          $ref: '#/components/schemas/PinterestOptions'
+        threads:
+          $ref: '#/components/schemas/ThreadsOptions'
+        skool:
+          $ref: '#/components/schemas/SkoolOptions'
+      description: >-
+        One flat post. Only the option block of post.platform is read (another network's block is named
+        in warnings). Per network: Pinterest needs pinterest.boardId (400 pinterest_board_required); Skool
+        needs skool.group and skool.title; media is required except for text posts on X, LinkedIn,
+        Threads, Skool and Facebook (400 otherwise). dryRun may also be sent inside post (and as
+        dry_run).
+
+    PostContent:
+      type: object
+      properties:
+        text:
+          type: string
+          description: >-
+            The caption, post text or title. Required when the post has no media. On YouTube and TikTok
+            photo posts it fills the title or the description you do not send.
+        mediaUrls:
+          type: array
+          items:
+            type: string
+          description: >-
+            Public URLs of the files. Whether a file is an image or a video is read from the end of its
+            URL (.jpg, .png, .mp4 ...). A scheduled post fetches them when it goes out, not now (warning
+            media_url_not_kept). Not used when file ids are sent too.
+        mediaID:
+          type: array
+          items:
+            type: string
+          description: >-
+            File ids from POST /media (UUIDs; also read as mediaIds). Used first, before mediaUrls. An id
+            that does not exist on your account is 404 media_not_found; one still importing is waited
+            for, then 409 media_processing. A value sent as text instead of a list is 400.
+
+    TikTokOptions:
+      type: object
+      properties:
+        privacyLevel:
+          type: string
+          enum: [PUBLIC_TO_EVERYONE, MUTUAL_FOLLOW_FRIENDS, FOLLOWER_OF_CREATOR, SELF_ONLY]
+          default: SELF_ONLY
+          description: >-
+            Only the levels GET /accounts/{profile_id}/options lists for the account are accepted by
+            TikTok. privacyStatus (YouTube's name) is not read here: the post goes out as SELF_ONLY and
+            warnings says so.
+        disabledComments:
+          type: boolean
+          default: false
+        disabledDuet:
+          type: boolean
+          default: false
+          description: Videos only.
+        disabledStitch:
+          type: boolean
+          default: false
+          description: Videos only.
+        isBrandedContent:
+          type: boolean
+          default: false
+        isYourBrand:
+          type: boolean
+          default: false
+        isAiGenerated:
+          type: boolean
+          default: false
+          description: Videos only.
+        autoAddMusic:
+          type: boolean
+          default: false
+          description: Photo posts only.
+        title:
+          type: string
+          description: A photo post's title (up to 90 characters; longer is shortened at the end of a word). On a video it is the caption (up to 2,200 characters) instead of content.text.
+        description:
+          type: string
+          description: A photo post's description (up to 4,000 characters). Not used on a video.
+
+    InstagramOptions:
+      type: object
+      properties:
+        postType:
+          type: string
+          enum: [feed_image, reel, story, carousel]
+          description: Omitted, carousel for two or more files, reel for a single video, otherwise feed_image.
+        shareToFeed:
+          type: boolean
+          default: true
+          description: Reels only.
+        coverUrl:
+          type: string
+          description: A Reel's cover image URL (fetched by Instagram when the Reel goes out).
+        thumbOffset:
+          type: number
+          description: A Reel's thumbnail offset in milliseconds.
+        collaborators:
+          type: array
+          items:
+            type: string
+          description: Usernames to invite as collaborators.
+        locationId:
+          type: string
+          description: A Facebook location id (feed images).
+
+    FacebookOptions:
+      type: object
+      properties:
+        postType:
+          type: string
+          enum: [photo, video, reel, text]
+          description: >-
+            Omitted, text when the post has no media field at all, video for one video file, otherwise
+            photo (several images make one multi-photo post). Without a postType, a media field sent
+            empty ([] or null) is 400.
+        videoTitle:
+          type: string
+          description: The title of a video post (defaults to the caption).
+        url:
+          type: string
+          description: A link for a text post (Facebook makes a link preview).
+
+    YouTubeOptions:
+      type: object
+      properties:
+        title:
+          type: string
+          description: The video title, up to 100 characters (longer is shortened at the end of a word). Without it the title comes from content.text.
+        description:
+          type: string
+          description: The description, up to 5,000 bytes. Without it, content.text when a title was sent.
+        privacyStatus:
+          type: string
+          enum: [public, unlisted, private]
+          default: private
+        tags:
+          type: array
+          items:
+            type: string
+          description: YouTube allows 500 characters of tags counted its own way; a longer list is 400 youtube_tags_too_long before the upload.
+        categoryId:
+          type: string
+          default: '22'
+        madeForKids:
+          type: boolean
+          default: false
+        embeddable:
+          type: boolean
+          default: true
+        license:
+          type: string
+          enum: [youtube, creativeCommon]
+          default: youtube
+        publicStatsViewable:
+          type: boolean
+          default: true
+        notifySubscribers:
+          type: boolean
+          default: true
+        defaultLanguage:
+          type: string
+          description: The language of the title and description (en, es, fr ...).
+
+    XOptions:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Overrides content.text for X.
+        whoCanReply:
+          type: string
+          enum: [everyone, following, mentionedUsers, subscribers, verified]
+          default: everyone
+        community:
+          type: string
+          description: The community's link (https://x.com/i/communities/<id>); anything else is not used (warnings says so).
+        madeWithAi:
+          type: boolean
+          x-status200-not-used: true
+          description: Accepted but not used (X gets no label); named in warnings.
+        paidPartnership:
+          type: boolean
+          x-status200-not-used: true
+          description: Accepted but not used (X gets no label); named in warnings.
+
+    LinkedInOptions:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Overrides content.text for LinkedIn.
+        carousel:
+          type: boolean
+          x-status200-not-used: true
+          description: Not supported; not used, and named in warnings.
+        carouselName:
+          type: string
+          x-status200-not-used: true
+          description: Not supported; not used, and named in warnings.
+
+    PinterestOptions:
+      type: object
+      properties:
+        boardId:
+          type: string
+          description: >-
+            Required for a pin: Pinterest's id of the board (GET /accounts/{profile_id}/options lists the
+            boards). Also read as board_id. Without it the post is 400 pinterest_board_required before
+            Pinterest is called.
+        title:
+          type: string
+          description: Cut to 100 characters; content.text when omitted.
+        description:
+          type: string
+          description: Cut to 800 characters. Without it the pin has no description.
+        link:
+          type: string
+        altText:
+          type: string
+        dominantColor:
+          type: string
+          description: A hex colour such as '#FF5733'.
+
+    ThreadsOptions:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Overrides content.text for Threads. Text over 500 characters, more than 20 files, or neither text nor media is 400.
+
+    SkoolOptions:
+      type: object
+      properties:
+        group:
+          type: string
+          description: Required. The Skool group id (GET /accounts/{profile_id}/options lists the groups).
+        groupSlug:
+          type: string
+        label:
+          type: string
+          description: A category label id.
+        title:
+          type: string
+          description: Required. The post title.
+
+    Warning:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          x-known-values: [unknown_field, field_not_used, options_outside_post, converted_to_jpeg, title_shortened, description_shortened, characters_removed, text_partly_used, title_missing, media_url_not_kept, skool_one_post_per_hour, posts_close_together, caption_over_limit, unknown_parameter]
+        message:
+          type: string
+        field:
+          type: string
+          description: Where the field sits in the request, e.g. post.youtube.allowEmbedding.
+        did_you_mean:
+          type: string
+      description: Something the caller should know about a request that went through. The post was still sent.
+
+    Status200Ids:
+      type: object
+      required: [post_id, scheduled_post_id, status_url]
+      properties:
+        post_id:
+          type: [string, 'null']
+          format: uuid
+          description: Our History id.
+        scheduled_post_id:
+          type: [string, 'null']
+          format: uuid
+        status_url:
+          type: string
+          format: uri
+          description: GET https://status200uploads.com/api/v2/posts/<post_id, else scheduled_post_id>.
+      description: >-
+        Our ids, on every answer (any status) that recorded a post in History or a scheduled post;
+        never on a dry run or on a refusal that recorded nothing. Use it rather than data.post_id,
+        which is the network's own id on Facebook, LinkedIn and Skool.
+
+    PublishResult:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          description: >-
+            The network's result. TikTok {status "processing", post_id (ours), publish_id, message};
+            Instagram {status "processing", post_id (ours), container_id, message}; X {tweet_id, text,
+            url}; LinkedIn {post_id (LinkedIn's), url}; Pinterest {pin_id, url, title, board_id};
+            Threads {thread_id, permalink}; Skool {post_id (Skool's), url}; Facebook Graph's own {id,
+            post_id?, video_id?, permalink?}; YouTube youtube-api's {video_id, url}.
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+        status200:
+          $ref: '#/components/schemas/Status200Ids'
+
+    DryRunReport:
+      type: object
+      required: [dry_run, checked_at, target, outcome, would_publish, reason, warnings, plan, media, checks]
+      properties:
+        dry_run:
+          type: boolean
+          const: true
+        checked_at:
+          type: string
+          format: date-time
+        target:
+          type: object
+          required: [account_id, profile_id, platform]
+          properties:
+            account_id:
+              type: [string, 'null']
+            profile_id:
+              type: [string, 'null']
+            platform:
+              type: [string, 'null']
+        outcome:
+          type: string
+          x-known-values: [publish, queue, refuse, schedule]
+        would_publish:
+          type: boolean
+        reason:
+          type: [object, 'null']
+          description: Why it would not go out now, with the code, message and HTTP status this address would answer (and that refusal's extras). null when outcome is publish.
+          required: [code, message, status]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            status:
+              type: integer
+        warnings:
+          type: array
+          items:
+            type: object
+            required: [code, message]
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+              also_blocking:
+                type: boolean
+                description: A second refusal after the one in reason.
+        plan:
+          type: [object, 'null']
+          properties:
+            tier:
+              type: string
+            is_admin:
+              type: boolean
+            allowance:
+              type: object
+              properties:
+                kind:
+                  type: string
+                used:
+                  type: [integer, 'null']
+                limit:
+                  type: [integer, 'null']
+                resets_at:
+                  type: [string, 'null']
+        media:
+          type: object
+          required: [count, type, from]
+          properties:
+            count:
+              type: integer
+            type:
+              type: [string, 'null']
+            from:
+              type: string
+              x-known-values: [ids, urls, none]
+        checks:
+          type: array
+          items:
+            type: object
+            required: [name, status]
+            properties:
+              name:
+                type: string
+              status:
+                type: string
+                x-known-values: [ok, refused, warning, skipped]
+              note:
+                type: string
+        will_send:
+          type: object
+          description: YouTube and TikTok only; the title and description a publish would send.
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+
+    Accepted:
+      type: object
+      properties:
+        code:
+          type: string
+          x-known-values: [scheduled, queued_for_next_day, still_publishing, schedule_unconfirmed]
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              x-known-values: [processing, scheduled]
+            post_id:
+              type: [string, 'null']
+            job_id:
+              type: [string, 'null']
+            message:
+              type: string
+            scheduled_post_id:
+              type: string
+              format: uuid
+            scheduled_at:
+              type: string
+              format: date-time
+        scheduled:
+          type: boolean
+          description: true on a scheduled post (code scheduled).
+        queued:
+          type: boolean
+          description: true only when the daily allowance moved the post to the next UTC day.
+        scheduled_post_id:
+          type: string
+          format: uuid
+          description: DELETE /posts/{scheduled_post_id} cancels it.
+        scheduled_at:
+          type: string
+          format: date-time
+        platform:
+          type: string
+        profile_id:
+          type: string
+          format: uuid
+        upgrade_url:
+          type: string
+          format: uri
+        limit:
+          type: integer
+        used:
+          type: integer
+        plan:
+          type: string
+        success:
+          type: boolean
+          description: false on still_publishing and schedule_unconfirmed (the outcome is not known yet).
+        status:
+          type: string
+          x-known-values: [unknown]
+        retry:
+          type: boolean
+          description: >-
+            Always false, on still_publishing and schedule_unconfirmed only: do not send this request
+            again. A boolean, not a rule (REST refusals carry no retry field).
+        post_id:
+          type: string
+          format: uuid
+          description: still_publishing, when the post is already in History.
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+        status200:
+          $ref: '#/components/schemas/Status200Ids'
+      x-status200-required-by-code:
+        scheduled: [scheduled, code, message, scheduled_post_id, scheduled_at, platform, profile_id, data, status200]
+        queued_for_next_day: [queued, code, message, upgrade_url, scheduled_post_id, scheduled_at, limit, used, plan, status200]
+        still_publishing: [success, status, code, retry, message]
+        schedule_unconfirmed: [success, status, code, retry, message]
+        (no code): [data]
+
+    ErrorObject:
+      type: object
+      required: [code, message]
+      properties: &errorFields
+        code:
+          type: string
+          description: Branch on this, not on the status alone. Each response lists its codes in x-error-codes; new codes are added without notice.
+        message:
+          type: string
+          description: A sentence for a person, saying what to do.
+        profiles:
+          type: array
+          items:
+            type: string
+          description: account_not_found and profile_name_ambiguous (the older address's 404 api_error too) - your profiles as "@name", at most 25.
+        file_id:
+          type: string
+        progress:
+          type: [integer, 'null']
+        retry_after_seconds:
+          type: integer
+          description: On every 429, and on the refusals that ask for a short wait.
+        upgrade_url:
+          type: string
+          format: uri
+        required:
+          type: string
+          x-known-values: [beginner, x_addon]
+        platform:
+          type: string
+        plan:
+          type: string
+        used:
+          type: integer
+        limit:
+          type: integer
+        window:
+          type: string
+          x-known-values: [day, month]
+        resets_at:
+          type: string
+          format: date-time
+        trial_available:
+          type: boolean
+        reason:
+          type: string
+          x-known-values: [no_time_zone, unreadable, too_far_ahead]
+        scheduled_for:
+          description: The post.scheduledFor value as it was sent.
+        status:
+          type: string
+          x-known-values: [processing, published, failed, scheduled]
+          description: not_cancellable - the scheduled post's status.
+        tags_length:
+          type: integer
+        max_tags_length:
+          type: integer
+        remove_tags:
+          type: integer
+        size_bytes:
+          type: integer
+        limits_url:
+          type: string
+          format: uri
+        max_video_bytes:
+          type: [integer, 'null']
+          description: >-
+            MEDIA_TOO_LARGE - the network's video limit here; null when the network takes no video here
+            (Pinterest).
+        max_image_bytes:
+          type: [integer, 'null']
+          description: MEDIA_TOO_LARGE - the network's image limit; null when the network takes no image (YouTube).
+        parameter:
+          type: string
+          description: The reads' 400 - which parameter.
+        started_at:
+          type: string
+        first_used_at:
+          type: string
+        url:
+          type: string
+        field:
+          type: string
+        upstream_status:
+          type: integer
+        attempts:
+          type: integer
+        ceiling:
+          type: integer
+        detected_links:
+          type: array
+          items:
+            type: string
+        link_used:
+          type: integer
+        link_limit:
+          type: integer
+      x-status200-required-by-code: &errorRequiredByCode
+        plan_required: [required, platform, plan, upgrade_url]
+        monthly_limit_reached: [upgrade_url, used, limit, window, resets_at, plan, trial_available, retry_after_seconds]
+        daily_limit_reached: [upgrade_url, used, limit, window, resets_at, plan, retry_after_seconds]
+        x_limit_reached: [used, limit, resets_at, plan, retry_after_seconds]
+        x_link_limit_reached: [link_used, link_limit, used, limit, resets_at, detected_links, plan, retry_after_seconds]
+        daily_attempts_exceeded: [attempts, ceiling, plan, retry_after_seconds]
+        rate_limited: [retry_after_seconds]
+        media_processing: [file_id, progress, retry_after_seconds]
+        media_not_found: [file_id]
+        media_failed: [file_id]
+        scheduled_for_invalid: [scheduled_for, reason]
+        youtube_tags_too_long: [platform, tags_length, max_tags_length, remove_tags]
+        MEDIA_TOO_LARGE: [platform, size_bytes, limits_url]
+        profile_name_ambiguous: [profiles]
+        not_cancellable: [status]
+        scheduled_queue_full: [limit]
+        idempotency_in_progress: [retry_after_seconds]
+        idempotency_unavailable: [retry_after_seconds]
+        caller_check_unavailable: [retry_after_seconds]
+        schedule_check_unavailable: [retry_after_seconds]
+        dry_run_unavailable: [retry_after_seconds]
+        cancel_unconfirmed: [retry_after_seconds]
+        upload_worker_failed: [upstream_status]
+      description: >-
+        REST refusals carry code, message and, for a plan refusal, upgrade_url, plus the facts of the
+        refusal below. They carry no next_step and no retry field (those are the AI connector's); what
+        a client may send again is components.x-status200-retry.
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorObject'
+        status200:
+          $ref: '#/components/schemas/Status200Ids'
+
+    OlderErrorObject:
+      type: object
+      required: [message]
+      # The same fields as ErrorObject (a YAML alias of its properties and of the fields each code carries).
+      properties: *errorFields
+      x-status200-required-by-code: *errorRequiredByCode
+      description: >-
+        The same fields as ErrorObject, with code not guaranteed: it is missing only when a network's own
+        error named none (it is passed on as it is).
+
+    OlderErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          $ref: '#/components/schemas/OlderErrorObject'
+        status200:
+          $ref: '#/components/schemas/Status200Ids'
+
+    CancelResult:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [scheduled_post_id, status, platforms, was_due_at, message]
+          properties:
+            scheduled_post_id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              x-known-values: [cancelled]
+            platforms:
+              type: array
+              items:
+                type: string
+            was_due_at:
+              type: string
+              description: When it was due (its scheduled_at).
+            message:
+              type: string
+            already_cancelled:
+              type: boolean
+              description: Present (true) when it was cancelled before this request. Nothing changed.
+      example:
+        data:
+          scheduled_post_id: c3d4e5f6-a7b8-9012-cdef-123456789012
+          status: cancelled
+          platforms: [tiktok]
+          was_due_at: '2026-10-01T09:00:00+00:00'
+          message: Cancelled. It will not be published.
+
+    AccountList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+
+    Account:
+      type: object
+      required: [profile_id, profile_name, handle, created_at, networks]
+      properties:
+        profile_id:
+          type: string
+          format: uuid
+        profile_name:
+          type: string
+        handle:
+          type: string
+          description: '"@" and the profile name: usable as post.accountId.'
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        networks:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountNetwork'
+
+    AccountNetwork:
+      type: object
+      required: [platform, username, status, health, access_expires_at, connected_at, updated_at]
+      properties:
+        platform:
+          type: string
+        username:
+          type: [string, 'null']
+        status:
+          type: string
+          x-known-values: [connected, expired]
+          description: The connection's own status.
+        health:
+          type: string
+          x-known-values: [ready, reconnect_required, unknown]
+          description: ready = it can post now (a sign-in the network renews by itself on the next post included); reconnect_required = reconnect it on the Connections page.
+        access_expires_at:
+          type: [string, 'null']
+          format: date-time
+        connected_at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+
+    PostingOptions:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [profile_id, profile_name, networks, note, asked_at]
+          properties:
+            profile_id:
+              type: string
+              format: uuid
+            profile_name:
+              type: string
+            networks:
+              type: array
+              items:
+                $ref: '#/components/schemas/NetworkOptions'
+            note:
+              type: [string, 'null']
+            asked_at:
+              type: string
+              format: date-time
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+
+    NetworkOptions:
+      type: object
+      required: [platform, status, options, note, checked_at, cached, error_code]
+      properties:
+        platform:
+          type: string
+        status:
+          type: string
+          x-known-values: [ok, not_connected, reconnect_required, unavailable, no_options]
+          description: Only ok carries options; every other status has a note saying why not.
+        options:
+          type: [object, 'null']
+          description: Shaped per network (x-status200-options-by-platform names each schema).
+        note:
+          type: [string, 'null']
+        checked_at:
+          type: [string, 'null']
+          format: date-time
+        cached:
+          type: boolean
+        error_code:
+          type: [string, 'null']
+      x-status200-options-by-platform:
+        tiktok: TikTokPostingOptions
+        pinterest: PinterestPostingOptions
+        facebook: FacebookPostingOptions
+        instagram: InstagramPostingOptions
+        skool: SkoolPostingOptions
+        youtube: YouTubePostingOptions
+
+    TikTokPostingOptions:
+      type: object
+      properties:
+        privacy_level_options:
+          type: array
+          items:
+            type: string
+          description: The only values TikTok will accept in post.tiktok.privacyLevel for this account (empty = it will not take a post right now).
+        comment_disabled:
+          type: boolean
+        duet_disabled:
+          type: boolean
+        stitch_disabled:
+          type: boolean
+        max_video_post_duration_sec:
+          type: [number, 'null']
+        creator_username:
+          type: [string, 'null']
+        creator_nickname:
+          type: [string, 'null']
+
+    PinterestPostingOptions:
+      type: object
+      properties:
+        boards:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: [string, 'null']
+                description: Send it as post.pinterest.boardId.
+              name:
+                type: [string, 'null']
+              privacy:
+                type: [string, 'null']
+              pin_count:
+                type: [number, 'null']
+
+    FacebookPostingOptions:
+      type: object
+      properties:
+        page_id:
+          type: [string, 'null']
+        page_name:
+          type: [string, 'null']
+        category:
+          type: [string, 'null']
+        followers:
+          type: [number, 'null']
+
+    InstagramPostingOptions:
+      type: object
+      properties:
+        posts_used:
+          type: [number, 'null']
+        posts_allowed:
+          type: [number, 'null']
+        posts_left:
+          type: [number, 'null']
+        window_hours:
+          type: [number, 'null']
+      description: Instagram's rolling publishing limit. A null means Instagram did not report it, not a zero.
+
+    SkoolPostingOptions:
+      type: object
+      properties:
+        groups:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: [string, 'null']
+                description: Send it as post.skool.group.
+              slug:
+                type: [string, 'null']
+              name:
+                type: [string, 'null']
+        labels:
+          type: [array, 'null']
+          items:
+            type: object
+            properties:
+              id:
+                type: [string, 'null']
+              name:
+                type: [string, 'null']
+        labels_for_group:
+          type: [string, 'null']
+
+    YouTubePostingOptions:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+        privacy_status_options:
+          type: array
+          items:
+            type: string
+        tags_max_characters:
+          type: integer
+
+    PostList:
+      type: object
+      required: [data, next_cursor, next_url]
+      properties:
+        data:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/PostItem'
+              - $ref: '#/components/schemas/ScheduledPostItem'
+        next_cursor:
+          type: [string, 'null']
+        next_url:
+          type: [string, 'null']
+          format: uri
+          description: The next page with the same filters; null on the last page.
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+
+    PostItem:
+      type: object
+      required: [id, kind, profile_id, platform, status, done, media_type, publish_id, permalink, error_message, at, updated_at, scheduled_post_id]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [post]
+        profile_id:
+          type: [string, 'null']
+        platform:
+          type: string
+        status:
+          type: string
+          x-known-values: [success, failed, processing, timeout]
+          description: timeout = sent, never confirmed; do not send it again.
+        done:
+          type: boolean
+          description: True once it will not change by itself.
+        media_type:
+          type: [string, 'null']
+        publish_id:
+          type: [string, 'null']
+          description: The network's own id.
+        permalink:
+          type: [string, 'null']
+        error_message:
+          type: [string, 'null']
+          maxLength: 1000
+        at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+        scheduled_post_id:
+          type: [string, 'null']
+
+    ScheduledPostItem:
+      type: object
+      required: [id, kind, profile_id, platforms, status, outcome, done, media_type, at, scheduled_for, created_at, updated_at, note, error_message]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [scheduled_post]
+        profile_id:
+          type: [string, 'null']
+        platforms:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          x-known-values: [scheduled, processing, published, failed, cancelled]
+        outcome:
+          type: string
+          x-known-values: [waiting, cancelled, sending, success, failed, partly_failed, unconfirmed]
+        done:
+          type: boolean
+        media_type:
+          type: [string, 'null']
+        at:
+          type: [string, 'null']
+          format: date-time
+        scheduled_for:
+          type: [string, 'null']
+          format: date-time
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+        note:
+          type: [string, 'null']
+          description: While it waits, why it moved (for example a used-up daily allowance). Not an error.
+        error_message:
+          type: [string, 'null']
+          maxLength: 1000
+
+    ScheduledResult:
+      type: object
+      required: [platform, post_id, status, done, publish_id, permalink, error_message]
+      properties:
+        platform:
+          type: string
+        post_id:
+          type: [string, 'null']
+          description: That network's History id, when there is one.
+        status:
+          type: string
+          x-known-values: [success, failed, processing, timeout, pending, not_sent]
+        done:
+          type: boolean
+        publish_id:
+          type: [string, 'null']
+        permalink:
+          type: [string, 'null']
+        error_message:
+          type: [string, 'null']
+          maxLength: 1000
+
+    Figures:
+      type: object
+      required: [metrics, not_reported, engagement, polled_at, note]
+      properties:
+        metrics:
+          type: object
+          required: [views, likes, comments, shares, impressions, reach, saves, clicks, watch_time_seconds]
+          properties:
+            views:
+              type: [number, 'null']
+            likes:
+              type: [number, 'null']
+            comments:
+              type: [number, 'null']
+            shares:
+              type: [number, 'null']
+            impressions:
+              type: [number, 'null']
+            reach:
+              type: [number, 'null']
+            saves:
+              type: [number, 'null']
+            clicks:
+              type: [number, 'null']
+            watch_time_seconds:
+              type: [number, 'null']
+          description: A figure the network reported, or null. Null never means zero.
+        not_reported:
+          type: array
+          items:
+            type: string
+        engagement:
+          type: [number, 'null']
+        polled_at:
+          type: [string, 'null']
+          format: date-time
+        note:
+          type: [string, 'null']
+
+    PostRead:
+      type: object
+      required: [data]
+      properties:
+        data:
+          oneOf:
+            - allOf:
+                - $ref: '#/components/schemas/PostItem'
+                - type: object
+                  required: [figures]
+                  properties:
+                    figures:
+                      oneOf:
+                        - type: 'null'
+                        - $ref: '#/components/schemas/Figures'
+                      description: null unless the post succeeded.
+            - allOf:
+                - $ref: '#/components/schemas/ScheduledPostItem'
+                - type: object
+                  required: [results]
+                  properties:
+                    results:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/ScheduledResult'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+
+    MediaImportRequest:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          description: A public http or https URL (port 80 or 443) of the image or video file itself (JPG, PNG, WebP, MP4, MOV, WebM), never a web page that shows it (415).
+      example:
+        url: https://example.com/video.mp4
+
+    MediaImportReady:
+      type: object
+      required: [success, file_id, size, type, status]
+      properties:
+        success:
+          type: boolean
+        file_id:
+          type: string
+          format: uuid
+          description: Send it in post.content.mediaID.
+        size:
+          type: [integer, 'null']
+        type:
+          type: string
+        status:
+          type: string
+          x-known-values: [ready]
+      example:
+        success: true
+        file_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        size: 2048576
+        type: image/jpeg
+        status: ready
+
+    MediaImportStarted:
+      type: object
+      required: [success, file_id, status, message, size, type]
+      properties:
+        success:
+          type: boolean
+        file_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          x-known-values: [processing]
+        message:
+          type: string
+        size:
+          type: [integer, 'null']
+        type:
+          type: string
+
+    MediaStatus:
+      type: object
+      required: [success, file_id, status, size, type, public_url, error]
+      properties:
+        success:
+          type: boolean
+          description: true only when status is ready.
+        file_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          x-known-values: [processing, ready, failed]
+        size:
+          type: [integer, 'null']
+        type:
+          type: [string, 'null']
+        public_url:
+          type: [string, 'null']
+        error:
+          type: [string, 'null']
+          description: The import's failure reason when status is failed. Not an error of this request.
+        bytes_uploaded:
+          type: integer
+          description: Present when the size of a URL import is known.
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    MediaError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          oneOf:
+            - type: string
+              description: The sentence (the older shape of this endpoint).
+            - $ref: '#/components/schemas/ImportBudgetError'
+        code:
+          type: string
+          description: On the 429 (rate_limited) and the Idempotency-Key answers.
+        retry_after_seconds:
+          type: integer
+        size:
+          type: [integer, 'null']
+          description: 413 - the declared size.
+        file_id:
+          type: string
+          description: 413 when the storage refused the file after the import started.
+        status:
+          type: string
+          x-known-values: [failed]
+        started_at:
+          type: string
+        first_used_at:
+          type: string
+
+    ImportBudgetError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          x-known-values: [import_budget_exhausted]
+        message:
+          type: string
+        used_bytes:
+          type: integer
+        limit_bytes:
+          type: [integer, 'null']
+        remaining_bytes:
+          type: integer
+        requested_bytes:
+          type: [integer, 'null']
+        window:
+          type: string
+        resets_at:
+          type: string
+          format: date-time
+        plan:
+          type: string
+        upgrade_url:
+          type: string
+          format: uri
+        retry_after_seconds:
+          type: integer
+      description: The daily import budget of a connected AI app's key (managed keys only; an ordinary API key never meets it).
+
+  x-status200-retry:
+    version: 1
+    rules:
+      wait_and_resend: >-
+        Nothing was sent, or the first answer comes back: wait Retry-After (else
+        error.retry_after_seconds or retry_after_seconds, else 5 seconds), then send the IDENTICAL
+        request again (the same body and the same Idempotency-Key). Cap the tries and the total wait.
+      resend_once_with_key: >-
+        The outcome may not be known. Send the identical request once more ONLY when it carried an
+        Idempotency-Key (an answer we kept is replayed; a failure the network reported is sent afresh,
+        as History's Retry would). Without a key, check History (GET /posts) instead.
+      never: The same request cannot succeed now. Change it, or wait for resets_at; do not resend it.
+      not_a_failure: Accepted. It goes out on its own; do not send it again.
+    by_code:
+      media_processing: wait_and_resend
+      idempotency_in_progress: wait_and_resend
+      rate_limited: wait_and_resend
+      caller_check_unavailable: wait_and_resend
+      schedule_check_unavailable: wait_and_resend
+      idempotency_unavailable: wait_and_resend
+      dry_run_unavailable: wait_and_resend
+      upstream_unavailable: wait_and_resend
+      cancel_unconfirmed: wait_and_resend
+      skool_unavailable: wait_and_resend
+      x_unavailable: wait_and_resend
+      platform_error: resend_once_with_key
+      server_error: resend_once_with_key
+      upload_worker_failed: resend_once_with_key
+      no_publish_id: resend_once_with_key
+      idempotency_outcome_unknown: never
+      idempotency_key_reused: never
+      monthly_limit_reached: never
+      daily_limit_reached: never
+      daily_attempts_exceeded: never
+      x_limit_reached: never
+      x_link_limit_reached: never
+      import_budget_exhausted: never
+      scheduled: not_a_failure
+      queued_for_next_day: not_a_failure
+      still_publishing: not_a_failure
+      schedule_unconfirmed: not_a_failure
+    by_status:
+      2xx: not_a_failure
+      4xx: never
+      5xx: resend_once_with_key
+      not_json: resend_once_with_key
+
+  x-status200-limits:
+    idempotency_key_max_length: 255
+    idempotency_ttl_hours: 24
+    idempotency_retry_after_seconds: 5
+    idempotency_stale_minutes: 10
+    reads_per_minute: 60
+    options_per_minute: 10
+    list_page_default: 20
+    list_page_max: 100
+    max_schedule_ahead_days: 365
+    schedule_now_within_seconds: 60
+    max_waiting_scheduled: 500
+    post_throttle_seconds: 20
+    media_throttle_seconds: 20
+    retry_after_header_max_seconds: 3600
+    media_processing_retry_after_seconds: 30
+    v2_media_wait_seconds: 12
+    older_media_wait_seconds: 90
+    v2_answer_within_seconds: 24
+    media_answer_within_seconds: 22
+    media_probe_timeout_seconds: 8
+    image_import_max_mb: 20
+    video_import_max_gb: 5
+    media_kept_days: 7
