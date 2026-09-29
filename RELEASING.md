@@ -136,6 +136,10 @@ through npm trusted publishing (OIDC)", which proves it.
   match exactly (`status200uploads`, `iBoyDroid`, `status-200-uploads`, `publish-python.yml`, `pypi`).
 - **The scan failed after publishing**: the version is on npm, but n8n's review would refuse it. Fix
   what the scan says and release the next version.
+- **n8n's Creator Portal says "Can't find credential file in repo"**: the Portal looks for the
+  credential at `credentials/` at the top of this repository, not in `n8n/credentials/`. The top-level
+  `credentials/` folder must be an exact copy of `n8n/credentials/`: after editing a credential, copy it
+  (`cp n8n/credentials/* credentials/`). CI and the release's check job fail when the two differ.
 - **The scan says the registry does not serve the version yet**: it was not scanned. npm can take
   several minutes to serve a new package everywhere. Open the run, **Re-run jobs**, **Re-run failed
   jobs**: only the scan runs again, and nothing is published twice.

@@ -65,6 +65,14 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+      # n8n's Creator Portal reads the credential source from the top of the repository (see ci.yml).
+      - name: The top-level credentials/ folder is an exact copy of n8n/credentials/
+        run: |
+          if ! diff -r credentials ../credentials; then
+            echo "::error::credentials/ at the top of the repository must be an exact copy of n8n/credentials/ (n8n's Creator Portal reads it there). Copy the files again on main and tag again."
+            exit 1
+          fi
+
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24

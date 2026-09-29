@@ -37,6 +37,15 @@ jobs:
           cache: npm
           cache-dependency-path: n8n/package-lock.json
 
+      # n8n's Creator Portal looks for the credential source at the top of the repository and ignores
+      # package.json's repository.directory, so credentials/ there is a copy of n8n/credentials/.
+      - name: The top-level credentials/ folder is an exact copy of n8n/credentials/
+        run: |
+          if ! diff -r credentials ../credentials; then
+            echo "::error::credentials/ at the top of the repository must be an exact copy of n8n/credentials/ (n8n's Creator Portal reads it there). Copy the files again: cp n8n/credentials/* credentials/"
+            exit 1
+          fi
+
       - name: Install
         run: npm ci
 
