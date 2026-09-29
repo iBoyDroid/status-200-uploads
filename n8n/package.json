@@ -1,6 +1,6 @@
 {
 	"name": "@status200uploads/n8n-nodes-status200uploads",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Publish and schedule posts to TikTok, Instagram, Facebook, YouTube, X, LinkedIn, Pinterest, Threads and Skool from n8n with Status 200 Uploads.",
 	"license": "MIT",
 	"homepage": "https://status200uploads.com/docs/api#guide-n8n",

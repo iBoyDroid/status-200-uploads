@@ -1,5 +1,5 @@
 /** The package version, sent in the User-Agent. test/package.test.ts holds it equal to package.json. */
-export const PACKAGE_VERSION = '0.1.0';
+export const PACKAGE_VERSION = '0.1.1';
 
 /** Every request of this node says who sent it, so support can tell node traffic apart. */
 export const USER_AGENT = `n8n-nodes-status200uploads/${PACKAGE_VERSION}`;

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+No change to how the node works. The User-Agent now says 0.1.1.
+
+- The repository also holds the credential at `credentials/` at its top level, where n8n's Creator
+  Portal looks for it when it checks the node for verification. It is released as a new version
+  because the Portal checks a node again only when npm has a new version.
+
 ## 0.1.0
 
 First release.

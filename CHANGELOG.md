@@ -21,3 +21,5 @@ The first public version of the repository:
   network is done.
 - CI on every push and pull request, and release workflows that publish from version tags after the
   maintainer's approval, with npm provenance and PyPI attestations ([RELEASING.md](RELEASING.md)).
+- `credentials/`: an exact copy of `n8n/credentials/` at the top of the repository, where n8n's
+  Creator Portal looks for the node's credential; CI fails if the two differ. The n8n node 0.1.1.

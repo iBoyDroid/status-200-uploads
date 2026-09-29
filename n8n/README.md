@@ -232,6 +232,7 @@ are not tested. It has no runtime dependencies.
 
 See [CHANGELOG.md](CHANGELOG.md).
 
+- **0.1.1**: no change to the node; released so n8n's Creator Portal checks it again.
 - **0.1.0**: first release.
 
 ## License
