@@ -94,6 +94,8 @@ by hand as below.
    - Repository: `status-200-uploads`
    - Workflow filename: `publish-n8n.yml`
    - Environment name: `npm`
+   - Allowed actions: tick **npm publish**. Without it the publisher may only stage a release
+     (`npm stage publish`), and `publish-n8n.yml`, which runs `npm publish`, is refused.
    Save, and enter your two-factor code.
 2. On the same page, under **Publishing access**, choose **Require two-factor authentication and
    disallow tokens**, and save.
@@ -130,6 +132,10 @@ through npm trusted publishing (OIDC)", which proves it.
   - `E404` or `E401` when publishing without a token: the trusted publisher's four fields must match
     exactly (`iBoyDroid`, `status-200-uploads`, `publish-n8n.yml`, `npm`). On npmjs.com a trusted
     publisher cannot be edited: delete it and add it again.
+  - `E403` "OIDC permission denied for this action": npm recognised this workflow, but the trusted
+    publisher's **Allowed actions** do not include **npm publish** (only staging). Allow it, then
+    **Re-run failed jobs**: nothing was published, so the same tag is released again (the 0.1.1 release
+    on 2026-09-29 failed this way).
   - "You cannot publish over the previously published versions": that version exists. Publish the
     next one.
 - **PyPI refused the publish** ("invalid-publisher"): the pending or trusted publisher's fields must

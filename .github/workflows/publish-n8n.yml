@@ -169,9 +169,11 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      # The scanner reads the package from the registry, which can answer 404 for several minutes after a
-      # publish (the first release on 2026-09-29 was still 404 five minutes later). A 404 is waited out;
-      # any other failure is the scan's verdict and stops the job at once.
+      # The scanner reads the package from the registry, which can lag for several minutes after a
+      # publish. A new package answers 404 (0.1.0 on 2026-09-29, still 404 five minutes later); a new
+      # version of an existing package is missing from its metadata ("No package metadata found for
+      # version", 0.1.1 the same day, about four minutes). Both are waited out; any other failure is the
+      # scan's verdict and stops the job at once.
       - name: Scan with @n8n/scan-community-package (retried while the registry catches up)
         env:
           VERSION: ${{ needs.check.outputs.version }}
@@ -182,7 +184,7 @@ jobs:
               grep -E "passed|✅" "$RUNNER_TEMP/scan.txt"
               exit 0
             fi
-            if ! grep -q "status code 404" "$RUNNER_TEMP/scan.txt"; then
+            if ! grep -qE "status code 404|No package metadata found for version" "$RUNNER_TEMP/scan.txt"; then
               cat "$RUNNER_TEMP/scan.txt"
               echo "::error::n8n's scanner did not pass $PACKAGE_NAME@$VERSION. The package is published; fix what the scan says and release a new version."
               exit 1
