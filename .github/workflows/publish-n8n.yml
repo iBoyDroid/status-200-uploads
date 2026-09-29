@@ -161,17 +161,26 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
+      # The scanner reads the package from the registry, which can answer 404 for several minutes after a
+      # publish (the first release on 2026-09-29 was still 404 five minutes later). A 404 is waited out;
+      # any other failure is the scan's verdict and stops the job at once.
       - name: Scan with @n8n/scan-community-package (retried while the registry catches up)
         env:
           VERSION: ${{ needs.check.outputs.version }}
         run: |
-          for attempt in 1 2 3 4 5 6 7 8 9 10; do
-            npx --yes @n8n/scan-community-package "$PACKAGE_NAME@$VERSION" 2>&1 | tee "$RUNNER_TEMP/scan.txt" || true
+          for attempt in $(seq 1 20); do
+            npx --yes @n8n/scan-community-package "$PACKAGE_NAME@$VERSION" > "$RUNNER_TEMP/scan.txt" 2>&1 || true
             if grep -q "has passed all security checks" "$RUNNER_TEMP/scan.txt"; then
+              grep -E "passed|✅" "$RUNNER_TEMP/scan.txt"
               exit 0
             fi
-            echo "Not passed yet (attempt $attempt of 10); trying again in 30 seconds."
+            if ! grep -q "status code 404" "$RUNNER_TEMP/scan.txt"; then
+              cat "$RUNNER_TEMP/scan.txt"
+              echo "::error::n8n's scanner did not pass $PACKAGE_NAME@$VERSION. The package is published; fix what the scan says and release a new version."
+              exit 1
+            fi
+            echo "The registry does not serve $PACKAGE_NAME@$VERSION yet (attempt $attempt of 20); trying again in 30 seconds."
             sleep 30
           done
-          echo "::error::n8n's scanner did not pass $PACKAGE_NAME@$VERSION. The package is published; fix what the scan says and release a new version."
+          echo "::error::The registry still did not serve $PACKAGE_NAME@$VERSION after 10 minutes, so it was not scanned. Run this job again later (Re-run failed jobs); nothing needs to be published again."
           exit 1

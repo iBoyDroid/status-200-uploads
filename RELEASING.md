@@ -136,6 +136,9 @@ through npm trusted publishing (OIDC)", which proves it.
   match exactly (`status200uploads`, `iBoyDroid`, `status-200-uploads`, `publish-python.yml`, `pypi`).
 - **The scan failed after publishing**: the version is on npm, but n8n's review would refuse it. Fix
   what the scan says and release the next version.
+- **The scan says the registry does not serve the version yet**: it was not scanned. npm can take
+  several minutes to serve a new package everywhere. Open the run, **Re-run jobs**, **Re-run failed
+  jobs**: only the scan runs again, and nothing is published twice.
 - Renaming a workflow file or an environment breaks publishing until the npm and PyPI settings above are
   changed to match.
 - Only approve runs you started yourself.
