@@ -131,7 +131,10 @@ jobs:
       - name: Publish with provenance
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          TARBALL: package/${{ needs.check.outputs.tarball }}
+          # The leading ./ is required: npm reads "package/<file>.tgz" (two words and a slash) as a GitHub
+          # repository shorthand and tries git@github.com:package/... instead of the local file (the first
+          # release attempt on 2026-09-29 failed that way, before anything was published).
+          TARBALL: ./package/${{ needs.check.outputs.tarball }}
           VERSION: ${{ needs.check.outputs.version }}
         run: |
           sha256sum "$TARBALL"
