@@ -546,8 +546,7 @@ paths:
         computer, not at a URL: POST /media/uploads.
 
 
-        Share links (rolling out: switched on account by account, for some accounts first; until then a
-        share link is imported exactly as before): where they are on, a Google Drive, Dropbox, OneDrive
+        Share links (on for every account since 9 October 2026): a Google Drive, Dropbox, OneDrive
         or SharePoint link of a file shared with "Anyone with the link" is turned into the address of
         the file itself and imported like any URL, under the name the provider gives the file, on the
         paid plans.
@@ -590,7 +589,7 @@ paths:
           description: >-
             Invalid JSON body, URL is required, a URL that is blocked or not http(s), the file could not
             be downloaded ("Failed to download file: ...", also when the server compresses the first
-            bytes it was asked for), or idempotency_key_invalid. Where share links are on, a share link
+            bytes it was asked for), or idempotency_key_invalid. A share link
             that cannot give one file, with next_step and provider: link_not_public (not shared with
             "Anyone with the link", or a Dropbox link without its rlkey part), link_is_folder,
             link_not_found, link_temporarily_blocked (the provider's own download limit, usually about 24
@@ -610,7 +609,7 @@ paths:
                 $ref: '#/components/schemas/MediaError'
         '403':
           description: >-
-            plan_limit_reached, where share links are on: a share link that needs converting, sent with
+            plan_limit_reached: a share link that needs converting, sent with
             the key of a Free account (share links are included in the paid plans, from Beginner), with
             upgrade_url, next_step and provider. Nothing was imported, and the 20-second wait did not
             start.
@@ -645,8 +644,8 @@ paths:
             ..."), or a source that sends no type or a generic one and whose first bytes are none of
             them (HEIC, AVIF and M4A included). Nothing is imported: convert the file first, or link
             the file itself. A shared file of another type names the file in file_name when the
-            provider sends its name; where share links are on, the message of a URL that is a page
-            adds that a share link works too.
+            provider sends its name; the message of a URL that is a page
+            adds that a share link works too on the paid plans.
           content:
             application/json:
               schema:
@@ -680,7 +679,7 @@ paths:
         '503':
           description: >-
             idempotency_unavailable: the Idempotency-Key could not be checked (Retry-After 5).
-            uploads_busy, where share links are on: the plan behind a share link that needs converting
+            uploads_busy: the plan behind a share link that needs converting
             could not be read just then, with retry_after_seconds (Retry-After 60). Nothing was imported.
           x-error-codes: [idempotency_unavailable, uploads_busy]
           headers:

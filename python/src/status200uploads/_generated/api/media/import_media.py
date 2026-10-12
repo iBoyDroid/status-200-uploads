@@ -129,8 +129,7 @@ def sync_detailed(
     time). One import every 20 seconds per account. Files are kept for 7 days, and until a scheduled
     post that uses them goes out. A file on a computer, not at a URL: POST /media/uploads.
 
-    Share links (rolling out: switched on account by account, for some accounts first; until then a
-    share link is imported exactly as before): where they are on, a Google Drive, Dropbox, OneDrive or
+    Share links (on for every account since 9 October 2026): a Google Drive, Dropbox, OneDrive or
     SharePoint link of a file shared with "Anyone with the link" is turned into the address of the file
     itself and imported like any URL, under the name the provider gives the file, on the paid plans. A
     file the provider gives no name is saved as file.<ext> (for example file.mp4), and a Dropbox file
@@ -182,8 +181,7 @@ def sync(
     time). One import every 20 seconds per account. Files are kept for 7 days, and until a scheduled
     post that uses them goes out. A file on a computer, not at a URL: POST /media/uploads.
 
-    Share links (rolling out: switched on account by account, for some accounts first; until then a
-    share link is imported exactly as before): where they are on, a Google Drive, Dropbox, OneDrive or
+    Share links (on for every account since 9 October 2026): a Google Drive, Dropbox, OneDrive or
     SharePoint link of a file shared with "Anyone with the link" is turned into the address of the file
     itself and imported like any URL, under the name the provider gives the file, on the paid plans. A
     file the provider gives no name is saved as file.<ext> (for example file.mp4), and a Dropbox file
@@ -230,8 +228,7 @@ async def asyncio_detailed(
     time). One import every 20 seconds per account. Files are kept for 7 days, and until a scheduled
     post that uses them goes out. A file on a computer, not at a URL: POST /media/uploads.
 
-    Share links (rolling out: switched on account by account, for some accounts first; until then a
-    share link is imported exactly as before): where they are on, a Google Drive, Dropbox, OneDrive or
+    Share links (on for every account since 9 October 2026): a Google Drive, Dropbox, OneDrive or
     SharePoint link of a file shared with "Anyone with the link" is turned into the address of the file
     itself and imported like any URL, under the name the provider gives the file, on the paid plans. A
     file the provider gives no name is saved as file.<ext> (for example file.mp4), and a Dropbox file
@@ -281,8 +278,7 @@ async def asyncio(
     time). One import every 20 seconds per account. Files are kept for 7 days, and until a scheduled
     post that uses them goes out. A file on a computer, not at a URL: POST /media/uploads.
 
-    Share links (rolling out: switched on account by account, for some accounts first; until then a
-    share link is imported exactly as before): where they are on, a Google Drive, Dropbox, OneDrive or
+    Share links (on for every account since 9 October 2026): a Google Drive, Dropbox, OneDrive or
     SharePoint link of a file shared with "Anyone with the link" is turned into the address of the file
     itself and imported like any URL, under the name the provider gives the file, on the paid plans. A
     file the provider gives no name is saved as file.<ext> (for example file.mp4), and a Dropbox file
