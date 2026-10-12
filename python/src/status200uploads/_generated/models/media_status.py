@@ -18,11 +18,15 @@ class MediaStatus:
     Attributes:
         success (bool): true only when status is ready.
         file_id (UUID):
-        status (str):
+        status (str): processing, ready or failed: a file in the media library. uploading (not all of the file has
+            arrived; run the uploader again, or get a fresh token) and verifying (it arrived and is being checked): an
+            upload link's file before it is in the library. Its failed has the reason in error.
         size (int | None):
         type_ (None | str):
-        public_url (None | str):
-        error (None | str): The import's failure reason when status is failed. Not an error of this request.
+        error (None | str): The import's (or the upload's) failure reason when status is failed. Not an error of this
+            request.
+        public_url (None | str | Unset): The file's public address in the media library. Not sent for an upload link's
+            file that is not in the library yet.
         bytes_uploaded (int | Unset): Present when the size of a URL import is known.
         progress (int | Unset):
     """
@@ -32,8 +36,8 @@ class MediaStatus:
     status: str
     size: int | None
     type_: None | str
-    public_url: None | str
     error: None | str
+    public_url: None | str | Unset = UNSET
     bytes_uploaded: int | Unset = UNSET
     progress: int | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -51,11 +55,14 @@ class MediaStatus:
         type_: None | str
         type_ = self.type_
 
-        public_url: None | str
-        public_url = self.public_url
-
         error: None | str
         error = self.error
+
+        public_url: None | str | Unset
+        if isinstance(self.public_url, Unset):
+            public_url = UNSET
+        else:
+            public_url = self.public_url
 
         bytes_uploaded = self.bytes_uploaded
 
@@ -70,10 +77,11 @@ class MediaStatus:
                 "status": status,
                 "size": size,
                 "type": type_,
-                "public_url": public_url,
                 "error": error,
             }
         )
+        if public_url is not UNSET:
+            field_dict["public_url"] = public_url
         if bytes_uploaded is not UNSET:
             field_dict["bytes_uploaded"] = bytes_uploaded
         if progress is not UNSET:
@@ -104,19 +112,21 @@ class MediaStatus:
 
         type_ = _parse_type_(d.pop("type"))
 
-        def _parse_public_url(data: object) -> None | str:
-            if data is None:
-                return data
-            return cast(None | str, data)
-
-        public_url = _parse_public_url(d.pop("public_url"))
-
         def _parse_error(data: object) -> None | str:
             if data is None:
                 return data
             return cast(None | str, data)
 
         error = _parse_error(d.pop("error"))
+
+        def _parse_public_url(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        public_url = _parse_public_url(d.pop("public_url", UNSET))
 
         bytes_uploaded = d.pop("bytes_uploaded", UNSET)
 
@@ -128,8 +138,8 @@ class MediaStatus:
             status=status,
             size=size,
             type_=type_,
-            public_url=public_url,
             error=error,
+            public_url=public_url,
             bytes_uploaded=bytes_uploaded,
             progress=progress,
         )

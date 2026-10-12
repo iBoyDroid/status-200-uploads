@@ -14,20 +14,22 @@ T = TypeVar("T", bound="ImportBudgetError")
 
 @_attrs_define
 class ImportBudgetError:
-    """The daily import budget of a connected AI app's key (managed keys only; an ordinary API key never meets it).
+    """The account's daily budget for files its apps upload or import: one per account and UTC day, counting the URL
+    imports of all its connected AI apps and every upload link. On this endpoint only a connected AI app's key (a
+    managed key) meets it; an ordinary API key never does. An upload link's refusal has its own shape (UploadLinkError).
 
-    Attributes:
-        code (str):
-        message (str):
-        used_bytes (int | Unset):
-        limit_bytes (int | None | Unset):
-        remaining_bytes (int | Unset):
-        requested_bytes (int | None | Unset):
-        window (str | Unset):
-        resets_at (datetime.datetime | Unset):
-        plan (str | Unset):
-        upgrade_url (str | Unset):
-        retry_after_seconds (int | Unset):
+        Attributes:
+            code (str):
+            message (str):
+            used_bytes (int | Unset):
+            limit_bytes (int | None | Unset):
+            remaining_bytes (int | Unset):
+            requested_bytes (int | None | Unset):
+            window (str | Unset):
+            resets_at (datetime.datetime | Unset):
+            plan (str | Unset):
+            upgrade_url (str | Unset):
+            retry_after_seconds (int | Unset):
     """
 
     code: str

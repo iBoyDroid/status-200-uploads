@@ -20,7 +20,11 @@ class MediaError:
     """
     Attributes:
         error (ImportBudgetError | str):
-        code (str | Unset): On the 429 (rate_limited) and the Idempotency-Key answers.
+        code (str | Unset): On the 429 (rate_limited), the Idempotency-Key answers, and a refused share link (its 400
+            code, 403 plan_limit_reached, 503 uploads_busy).
+        provider (str | Unset): A refused share link's source. Next to it, next_step says what fixes it.
+        upgrade_url (str | Unset): 403 plan_limit_reached of a share link - where the paid plans are.
+        file_name (str | Unset): 415 of a share link - the shared file's name, when the provider sent it.
         retry_after_seconds (int | Unset):
         size (int | None | Unset): 413 - the declared size.
         file_id (str | Unset): 413 when the storage refused the file after the import started.
@@ -31,6 +35,9 @@ class MediaError:
 
     error: ImportBudgetError | str
     code: str | Unset = UNSET
+    provider: str | Unset = UNSET
+    upgrade_url: str | Unset = UNSET
+    file_name: str | Unset = UNSET
     retry_after_seconds: int | Unset = UNSET
     size: int | None | Unset = UNSET
     file_id: str | Unset = UNSET
@@ -49,6 +56,12 @@ class MediaError:
             error = self.error
 
         code = self.code
+
+        provider = self.provider
+
+        upgrade_url = self.upgrade_url
+
+        file_name = self.file_name
 
         retry_after_seconds = self.retry_after_seconds
 
@@ -75,6 +88,12 @@ class MediaError:
         )
         if code is not UNSET:
             field_dict["code"] = code
+        if provider is not UNSET:
+            field_dict["provider"] = provider
+        if upgrade_url is not UNSET:
+            field_dict["upgrade_url"] = upgrade_url
+        if file_name is not UNSET:
+            field_dict["file_name"] = file_name
         if retry_after_seconds is not UNSET:
             field_dict["retry_after_seconds"] = retry_after_seconds
         if size is not UNSET:
@@ -111,6 +130,12 @@ class MediaError:
 
         code = d.pop("code", UNSET)
 
+        provider = d.pop("provider", UNSET)
+
+        upgrade_url = d.pop("upgrade_url", UNSET)
+
+        file_name = d.pop("file_name", UNSET)
+
         retry_after_seconds = d.pop("retry_after_seconds", UNSET)
 
         def _parse_size(data: object) -> int | None | Unset:
@@ -133,6 +158,9 @@ class MediaError:
         media_error = cls(
             error=error,
             code=code,
+            provider=provider,
+            upgrade_url=upgrade_url,
+            file_name=file_name,
             retry_after_seconds=retry_after_seconds,
             size=size,
             file_id=file_id,

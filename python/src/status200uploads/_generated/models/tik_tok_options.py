@@ -17,21 +17,25 @@ T = TypeVar("T", bound="TikTokOptions")
 
 @_attrs_define
 class TikTokOptions:
-    """
-    Attributes:
-        privacy_level (TikTokOptionsPrivacyLevel | Unset): Only the levels GET /accounts/{profile_id}/options lists for
-            the account are accepted by TikTok. privacyStatus (YouTube's name) is not read here: the post goes out as
-            SELF_ONLY and warnings says so. Default: 'SELF_ONLY'.
-        disabled_comments (bool | Unset):  Default: False.
-        disabled_duet (bool | Unset): Videos only. Default: False.
-        disabled_stitch (bool | Unset): Videos only. Default: False.
-        is_branded_content (bool | Unset):  Default: False.
-        is_your_brand (bool | Unset):  Default: False.
-        is_ai_generated (bool | Unset): Videos only. Default: False.
-        auto_add_music (bool | Unset): Photo posts only. Default: False.
-        title (str | Unset): A photo post's title (up to 90 characters; longer is shortened at the end of a word). On a
-            video it is the caption (up to 2,200 characters) instead of content.text.
-        description (str | Unset): A photo post's description (up to 4,000 characters). Not used on a video.
+    """Photos: TikTok takes them up to 1080 x 1920 pixels (1920 x 1080 when wide). A larger JPEG is sent as a smaller copy
+    inside that size, and warnings says so with both sizes (resized_for_tiktok); a larger photo that cannot be made
+    smaller is refused before anything is sent (422 photo_too_large_to_resize). The original file is never changed. The
+    limits and every message: https://status200uploads.com/docs/api#tiktok-photos.
+
+        Attributes:
+            privacy_level (TikTokOptionsPrivacyLevel | Unset): Only the levels GET /accounts/{profile_id}/options lists for
+                the account are accepted by TikTok. privacyStatus (YouTube's name) is not read here: the post goes out as
+                SELF_ONLY and warnings says so. Default: 'SELF_ONLY'.
+            disabled_comments (bool | Unset):  Default: False.
+            disabled_duet (bool | Unset): Videos only. Default: False.
+            disabled_stitch (bool | Unset): Videos only. Default: False.
+            is_branded_content (bool | Unset):  Default: False.
+            is_your_brand (bool | Unset):  Default: False.
+            is_ai_generated (bool | Unset): Videos only. Default: False.
+            auto_add_music (bool | Unset): Photo posts only. Default: False.
+            title (str | Unset): A photo post's title (up to 90 characters; longer is shortened at the end of a word). On a
+                video it is the caption (up to 2,200 characters) instead of content.text.
+            description (str | Unset): A photo post's description (up to 4,000 characters). Not used on a video.
     """
 
     privacy_level: TikTokOptionsPrivacyLevel | Unset = "SELF_ONLY"

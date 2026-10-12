@@ -56,6 +56,11 @@ def _parse_response(
 
         return response_401
 
+    if response.status_code == 403:
+        response_403 = MediaError.from_dict(response.json())
+
+        return response_403
+
     if response.status_code == 409:
         response_409 = MediaError.from_dict(response.json())
 
@@ -115,11 +120,26 @@ def sync_detailed(
 ) -> Response[MediaError | MediaImportReady | MediaImportStarted]:
     """Import an image or a video from a URL
 
-     Images up to 20 MB, videos up to 5 GB. The source is probed first (a HEAD, then a 1-byte ranged GET,
-    8 seconds each, so up to about 16 seconds). The request waits up to about 22 seconds for the import:
-    200 ready, otherwise 202 processing (at once when the declared size cannot finish in time). One
-    import every 20 seconds per account. Files are kept for 7 days, and until a scheduled post that uses
-    them goes out.
+     Images up to 20 MB, videos up to 5 GB, of the types the media library takes: JPEG, PNG and WebP
+    images, MP4 (M4V too), MOV and WebM videos. The source is probed first: a HEAD, then a ranged GET of
+    one byte, or of the first 4 KB when the server sends no type or a generic one such as
+    application/octet-stream (or when the HEAD fails), 8 seconds each, so up to about 16 seconds. A file
+    without a usable type is judged by those first bytes. The request waits up to about 22 seconds for
+    the import: 200 ready, otherwise 202 processing (at once when the declared size cannot finish in
+    time). One import every 20 seconds per account. Files are kept for 7 days, and until a scheduled
+    post that uses them goes out. A file on a computer, not at a URL: POST /media/uploads.
+
+    Share links (rolling out: switched on account by account, for some accounts first; until then a
+    share link is imported exactly as before): where they are on, a Google Drive, Dropbox, OneDrive or
+    SharePoint link of a file shared with "Anyone with the link" is turned into the address of the file
+    itself and imported like any URL, under the name the provider gives the file, on the paid plans. A
+    file the provider gives no name is saved as file.<ext> (for example file.mp4), and a Dropbox file
+    without one under the file name in its link. A link that cannot give one file is refused before
+    anything is imported (400 with its own code, next_step and provider), and so is a link that needs
+    converting sent with a Free key (403 plan_limit_reached); a link that already downloads the file (a
+    drive.usercontent.google.com link, a Google Drive uc link with export=download, a OneDrive or
+    SharePoint download.aspx?share= link) is imported on every plan, with a Free key exactly as before.
+    A refusal decided from the link or the plan does not start the 20-second wait.
 
     Args:
         idempotency_key (str | Unset):
@@ -153,11 +173,26 @@ def sync(
 ) -> MediaError | MediaImportReady | MediaImportStarted | None:
     """Import an image or a video from a URL
 
-     Images up to 20 MB, videos up to 5 GB. The source is probed first (a HEAD, then a 1-byte ranged GET,
-    8 seconds each, so up to about 16 seconds). The request waits up to about 22 seconds for the import:
-    200 ready, otherwise 202 processing (at once when the declared size cannot finish in time). One
-    import every 20 seconds per account. Files are kept for 7 days, and until a scheduled post that uses
-    them goes out.
+     Images up to 20 MB, videos up to 5 GB, of the types the media library takes: JPEG, PNG and WebP
+    images, MP4 (M4V too), MOV and WebM videos. The source is probed first: a HEAD, then a ranged GET of
+    one byte, or of the first 4 KB when the server sends no type or a generic one such as
+    application/octet-stream (or when the HEAD fails), 8 seconds each, so up to about 16 seconds. A file
+    without a usable type is judged by those first bytes. The request waits up to about 22 seconds for
+    the import: 200 ready, otherwise 202 processing (at once when the declared size cannot finish in
+    time). One import every 20 seconds per account. Files are kept for 7 days, and until a scheduled
+    post that uses them goes out. A file on a computer, not at a URL: POST /media/uploads.
+
+    Share links (rolling out: switched on account by account, for some accounts first; until then a
+    share link is imported exactly as before): where they are on, a Google Drive, Dropbox, OneDrive or
+    SharePoint link of a file shared with "Anyone with the link" is turned into the address of the file
+    itself and imported like any URL, under the name the provider gives the file, on the paid plans. A
+    file the provider gives no name is saved as file.<ext> (for example file.mp4), and a Dropbox file
+    without one under the file name in its link. A link that cannot give one file is refused before
+    anything is imported (400 with its own code, next_step and provider), and so is a link that needs
+    converting sent with a Free key (403 plan_limit_reached); a link that already downloads the file (a
+    drive.usercontent.google.com link, a Google Drive uc link with export=download, a OneDrive or
+    SharePoint download.aspx?share= link) is imported on every plan, with a Free key exactly as before.
+    A refusal decided from the link or the plan does not start the 20-second wait.
 
     Args:
         idempotency_key (str | Unset):
@@ -186,11 +221,26 @@ async def asyncio_detailed(
 ) -> Response[MediaError | MediaImportReady | MediaImportStarted]:
     """Import an image or a video from a URL
 
-     Images up to 20 MB, videos up to 5 GB. The source is probed first (a HEAD, then a 1-byte ranged GET,
-    8 seconds each, so up to about 16 seconds). The request waits up to about 22 seconds for the import:
-    200 ready, otherwise 202 processing (at once when the declared size cannot finish in time). One
-    import every 20 seconds per account. Files are kept for 7 days, and until a scheduled post that uses
-    them goes out.
+     Images up to 20 MB, videos up to 5 GB, of the types the media library takes: JPEG, PNG and WebP
+    images, MP4 (M4V too), MOV and WebM videos. The source is probed first: a HEAD, then a ranged GET of
+    one byte, or of the first 4 KB when the server sends no type or a generic one such as
+    application/octet-stream (or when the HEAD fails), 8 seconds each, so up to about 16 seconds. A file
+    without a usable type is judged by those first bytes. The request waits up to about 22 seconds for
+    the import: 200 ready, otherwise 202 processing (at once when the declared size cannot finish in
+    time). One import every 20 seconds per account. Files are kept for 7 days, and until a scheduled
+    post that uses them goes out. A file on a computer, not at a URL: POST /media/uploads.
+
+    Share links (rolling out: switched on account by account, for some accounts first; until then a
+    share link is imported exactly as before): where they are on, a Google Drive, Dropbox, OneDrive or
+    SharePoint link of a file shared with "Anyone with the link" is turned into the address of the file
+    itself and imported like any URL, under the name the provider gives the file, on the paid plans. A
+    file the provider gives no name is saved as file.<ext> (for example file.mp4), and a Dropbox file
+    without one under the file name in its link. A link that cannot give one file is refused before
+    anything is imported (400 with its own code, next_step and provider), and so is a link that needs
+    converting sent with a Free key (403 plan_limit_reached); a link that already downloads the file (a
+    drive.usercontent.google.com link, a Google Drive uc link with export=download, a OneDrive or
+    SharePoint download.aspx?share= link) is imported on every plan, with a Free key exactly as before.
+    A refusal decided from the link or the plan does not start the 20-second wait.
 
     Args:
         idempotency_key (str | Unset):
@@ -222,11 +272,26 @@ async def asyncio(
 ) -> MediaError | MediaImportReady | MediaImportStarted | None:
     """Import an image or a video from a URL
 
-     Images up to 20 MB, videos up to 5 GB. The source is probed first (a HEAD, then a 1-byte ranged GET,
-    8 seconds each, so up to about 16 seconds). The request waits up to about 22 seconds for the import:
-    200 ready, otherwise 202 processing (at once when the declared size cannot finish in time). One
-    import every 20 seconds per account. Files are kept for 7 days, and until a scheduled post that uses
-    them goes out.
+     Images up to 20 MB, videos up to 5 GB, of the types the media library takes: JPEG, PNG and WebP
+    images, MP4 (M4V too), MOV and WebM videos. The source is probed first: a HEAD, then a ranged GET of
+    one byte, or of the first 4 KB when the server sends no type or a generic one such as
+    application/octet-stream (or when the HEAD fails), 8 seconds each, so up to about 16 seconds. A file
+    without a usable type is judged by those first bytes. The request waits up to about 22 seconds for
+    the import: 200 ready, otherwise 202 processing (at once when the declared size cannot finish in
+    time). One import every 20 seconds per account. Files are kept for 7 days, and until a scheduled
+    post that uses them goes out. A file on a computer, not at a URL: POST /media/uploads.
+
+    Share links (rolling out: switched on account by account, for some accounts first; until then a
+    share link is imported exactly as before): where they are on, a Google Drive, Dropbox, OneDrive or
+    SharePoint link of a file shared with "Anyone with the link" is turned into the address of the file
+    itself and imported like any URL, under the name the provider gives the file, on the paid plans. A
+    file the provider gives no name is saved as file.<ext> (for example file.mp4), and a Dropbox file
+    without one under the file name in its link. A link that cannot give one file is refused before
+    anything is imported (400 with its own code, next_step and provider), and so is a link that needs
+    converting sent with a Free key (403 plan_limit_reached); a link that already downloads the file (a
+    drive.usercontent.google.com link, a Google Drive uc link with export=download, a OneDrive or
+    SharePoint download.aspx?share= link) is imported on every plan, with a Free key exactly as before.
+    A refusal decided from the link or the plan does not start the 20-second wait.
 
     Args:
         idempotency_key (str | Unset):

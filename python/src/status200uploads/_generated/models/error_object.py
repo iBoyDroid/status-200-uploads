@@ -59,6 +59,8 @@ class ErrorObject:
             detected_links (list[str] | Unset):
             link_used (int | Unset):
             link_limit (int | Unset):
+            photo (int | Unset): The TikTok photo refusals (photo_format_not_supported, photo_too_large_to_convert,
+                photo_too_large_to_resize, photo_conversion_failed) - which photo of the post, counting from 1.
     """
 
     code: str
@@ -97,6 +99,7 @@ class ErrorObject:
     detected_links: list[str] | Unset = UNSET
     link_used: int | Unset = UNSET
     link_limit: int | Unset = UNSET
+    photo: int | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -190,6 +193,8 @@ class ErrorObject:
 
         link_limit = self.link_limit
 
+        photo = self.photo
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -266,6 +271,8 @@ class ErrorObject:
             field_dict["link_used"] = link_used
         if link_limit is not UNSET:
             field_dict["link_limit"] = link_limit
+        if photo is not UNSET:
+            field_dict["photo"] = photo
 
         return field_dict
 
@@ -370,6 +377,8 @@ class ErrorObject:
 
         link_limit = d.pop("link_limit", UNSET)
 
+        photo = d.pop("photo", UNSET)
+
         error_object = cls(
             code=code,
             message=message,
@@ -407,6 +416,7 @@ class ErrorObject:
             detected_links=detected_links,
             link_used=link_used,
             link_limit=link_limit,
+            photo=photo,
         )
 
         error_object.additional_properties = d

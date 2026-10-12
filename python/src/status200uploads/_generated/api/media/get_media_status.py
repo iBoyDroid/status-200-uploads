@@ -80,9 +80,10 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     file_id: UUID,
 ) -> Response[MediaError | MediaStatus]:
-    """Follow an import
+    """Follow an import, or an upload link's file
 
-     Status checks are not throttled and not counted.
+     The file_id of a URL import (POST /media) or of an upload link (POST /media/uploads). Status checks
+    are not throttled and not counted.
 
     Args:
         file_id (UUID):
@@ -111,9 +112,10 @@ def sync(
     client: AuthenticatedClient | Client,
     file_id: UUID,
 ) -> MediaError | MediaStatus | None:
-    """Follow an import
+    """Follow an import, or an upload link's file
 
-     Status checks are not throttled and not counted.
+     The file_id of a URL import (POST /media) or of an upload link (POST /media/uploads). Status checks
+    are not throttled and not counted.
 
     Args:
         file_id (UUID):
@@ -137,9 +139,10 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     file_id: UUID,
 ) -> Response[MediaError | MediaStatus]:
-    """Follow an import
+    """Follow an import, or an upload link's file
 
-     Status checks are not throttled and not counted.
+     The file_id of a URL import (POST /media) or of an upload link (POST /media/uploads). Status checks
+    are not throttled and not counted.
 
     Args:
         file_id (UUID):
@@ -166,9 +169,10 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     file_id: UUID,
 ) -> MediaError | MediaStatus | None:
-    """Follow an import
+    """Follow an import, or an upload link's file
 
-     Status checks are not throttled and not counted.
+     The file_id of a URL import (POST /media) or of an upload link (POST /media/uploads). Status checks
+    are not throttled and not counted.
 
     Args:
         file_id (UUID):

@@ -12,6 +12,7 @@ from ..models.post_item_kind import PostItemKind, check_post_item_kind
 
 if TYPE_CHECKING:
     from ..models.figures import Figures
+    from ..models.warning import Warning_
 
 
 T = TypeVar("T", bound="PostReadDataType0")
@@ -34,6 +35,14 @@ class PostReadDataType0:
         at (datetime.datetime | None):
         updated_at (datetime.datetime | None):
         scheduled_post_id (None | str):
+        notices (list[Warning_]): What we changed to get a TikTok photo post out, as it was said when TikTok took the
+            post: a photo sent as a smaller copy (resized_for_tiktok, for a photo larger than 1080 x 1920) or as a JPEG copy
+            (converted_to_jpeg), a title or description shortened or made from part of the text (title_shortened,
+            description_shortened, text_partly_used). Each entry has code and message and, for a photo, photo (for a smaller
+            copy also photos, size and copy_size); the answer's from and field are not kept. Kept also when the post went
+            out through a schedule. Empty when there is none, and on every other network: there, what we changed (a YouTube
+            title or description we shortened, for example) is said only in the warnings of the answer that sent or
+            scheduled the post. See https://status200uploads.com/docs/api#tiktok-photos.
         figures (Figures | None): null unless the post succeeded.
     """
 
@@ -50,6 +59,7 @@ class PostReadDataType0:
     at: datetime.datetime | None
     updated_at: datetime.datetime | None
     scheduled_post_id: None | str
+    notices: list[Warning_]
     figures: Figures | None
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -96,6 +106,11 @@ class PostReadDataType0:
         scheduled_post_id: None | str
         scheduled_post_id = self.scheduled_post_id
 
+        notices = []
+        for notices_item_data in self.notices:
+            notices_item = notices_item_data.to_dict()
+            notices.append(notices_item)
+
         figures: dict[str, Any] | None
         if isinstance(self.figures, Figures):
             figures = self.figures.to_dict()
@@ -119,6 +134,7 @@ class PostReadDataType0:
                 "at": at,
                 "updated_at": updated_at,
                 "scheduled_post_id": scheduled_post_id,
+                "notices": notices,
                 "figures": figures,
             }
         )
@@ -128,6 +144,7 @@ class PostReadDataType0:
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
         from ..models.figures import Figures
+        from ..models.warning import Warning_
 
         d = dict(src_dict)
         id = UUID(d.pop("id"))
@@ -212,6 +229,13 @@ class PostReadDataType0:
 
         scheduled_post_id = _parse_scheduled_post_id(d.pop("scheduled_post_id"))
 
+        notices = []
+        _notices = d.pop("notices")
+        for notices_item_data in _notices:
+            notices_item = Warning_.from_dict(notices_item_data)
+
+            notices.append(notices_item)
+
         def _parse_figures(data: object) -> Figures | None:
             if data is None:
                 return data
@@ -241,6 +265,7 @@ class PostReadDataType0:
             at=at,
             updated_at=updated_at,
             scheduled_post_id=scheduled_post_id,
+            notices=notices,
             figures=figures,
         )
 

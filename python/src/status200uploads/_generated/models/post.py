@@ -46,7 +46,11 @@ class Post:
                 no_time_zone (even a past time without a zone), unreadable (not a date and time, a date written with numbers
                 only such as 01/10/2026 included) or too_far_ahead.
             content (PostContent | Unset):
-            tiktok (TikTokOptions | Unset):
+            tiktok (TikTokOptions | Unset): Photos: TikTok takes them up to 1080 x 1920 pixels (1920 x 1080 when wide). A
+                larger JPEG is sent as a smaller copy inside that size, and warnings says so with both sizes
+                (resized_for_tiktok); a larger photo that cannot be made smaller is refused before anything is sent (422
+                photo_too_large_to_resize). The original file is never changed. The limits and every message:
+                https://status200uploads.com/docs/api#tiktok-photos.
             instagram (InstagramOptions | Unset):
             facebook (FacebookOptions | Unset):
             youtube (YouTubeOptions | Unset):

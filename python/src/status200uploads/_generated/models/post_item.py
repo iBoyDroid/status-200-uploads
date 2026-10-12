@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Mapping
-from typing import Any, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
 from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.post_item_kind import PostItemKind, check_post_item_kind
+
+if TYPE_CHECKING:
+    from ..models.warning import Warning_
+
 
 T = TypeVar("T", bound="PostItem")
 
@@ -30,6 +34,14 @@ class PostItem:
         at (datetime.datetime | None):
         updated_at (datetime.datetime | None):
         scheduled_post_id (None | str):
+        notices (list[Warning_]): What we changed to get a TikTok photo post out, as it was said when TikTok took the
+            post: a photo sent as a smaller copy (resized_for_tiktok, for a photo larger than 1080 x 1920) or as a JPEG copy
+            (converted_to_jpeg), a title or description shortened or made from part of the text (title_shortened,
+            description_shortened, text_partly_used). Each entry has code and message and, for a photo, photo (for a smaller
+            copy also photos, size and copy_size); the answer's from and field are not kept. Kept also when the post went
+            out through a schedule. Empty when there is none, and on every other network: there, what we changed (a YouTube
+            title or description we shortened, for example) is said only in the warnings of the answer that sent or
+            scheduled the post. See https://status200uploads.com/docs/api#tiktok-photos.
     """
 
     id: UUID
@@ -45,6 +57,7 @@ class PostItem:
     at: datetime.datetime | None
     updated_at: datetime.datetime | None
     scheduled_post_id: None | str
+    notices: list[Warning_]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -88,6 +101,11 @@ class PostItem:
         scheduled_post_id: None | str
         scheduled_post_id = self.scheduled_post_id
 
+        notices = []
+        for notices_item_data in self.notices:
+            notices_item = notices_item_data.to_dict()
+            notices.append(notices_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -105,6 +123,7 @@ class PostItem:
                 "at": at,
                 "updated_at": updated_at,
                 "scheduled_post_id": scheduled_post_id,
+                "notices": notices,
             }
         )
 
@@ -112,6 +131,8 @@ class PostItem:
 
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
+        from ..models.warning import Warning_
+
         d = dict(src_dict)
         id = UUID(d.pop("id"))
 
@@ -195,6 +216,13 @@ class PostItem:
 
         scheduled_post_id = _parse_scheduled_post_id(d.pop("scheduled_post_id"))
 
+        notices = []
+        _notices = d.pop("notices")
+        for notices_item_data in _notices:
+            notices_item = Warning_.from_dict(notices_item_data)
+
+            notices.append(notices_item)
+
         post_item = cls(
             id=id,
             kind=kind,
@@ -209,6 +237,7 @@ class PostItem:
             at=at,
             updated_at=updated_at,
             scheduled_post_id=scheduled_post_id,
+            notices=notices,
         )
 
         post_item.additional_properties = d

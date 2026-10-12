@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+
+if TYPE_CHECKING:
+    from ..models.warning import Warning_
+
 
 T = TypeVar("T", bound="ScheduledResult")
 
@@ -20,6 +24,9 @@ class ScheduledResult:
         publish_id (None | str):
         permalink (None | str):
         error_message (None | str):
+        notices (list[Warning_]): That network's post's notices (see PostItem): what we changed to get a TikTok photo
+            post out, for example a photo sent as a smaller copy. Empty on the other networks, and while there is no post
+            (pending, not_sent).
     """
 
     platform: str
@@ -29,6 +36,7 @@ class ScheduledResult:
     publish_id: None | str
     permalink: None | str
     error_message: None | str
+    notices: list[Warning_]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -50,6 +58,11 @@ class ScheduledResult:
         error_message: None | str
         error_message = self.error_message
 
+        notices = []
+        for notices_item_data in self.notices:
+            notices_item = notices_item_data.to_dict()
+            notices.append(notices_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -61,6 +74,7 @@ class ScheduledResult:
                 "publish_id": publish_id,
                 "permalink": permalink,
                 "error_message": error_message,
+                "notices": notices,
             }
         )
 
@@ -68,6 +82,8 @@ class ScheduledResult:
 
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
+        from ..models.warning import Warning_
+
         d = dict(src_dict)
         platform = d.pop("platform")
 
@@ -103,6 +119,13 @@ class ScheduledResult:
 
         error_message = _parse_error_message(d.pop("error_message"))
 
+        notices = []
+        _notices = d.pop("notices")
+        for notices_item_data in _notices:
+            notices_item = Warning_.from_dict(notices_item_data)
+
+            notices.append(notices_item)
+
         scheduled_result = cls(
             platform=platform,
             post_id=post_id,
@@ -111,6 +134,7 @@ class ScheduledResult:
             publish_id=publish_id,
             permalink=permalink,
             error_message=error_message,
+            notices=notices,
         )
 
         scheduled_result.additional_properties = d

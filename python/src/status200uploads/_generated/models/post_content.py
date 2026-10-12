@@ -20,9 +20,11 @@ class PostContent:
         media_urls (list[str] | Unset): Public URLs of the files. Whether a file is an image or a video is read from the
             end of its URL (.jpg, .png, .mp4 ...). A scheduled post fetches them when it goes out, not now (warning
             media_url_not_kept). Not used when file ids are sent too.
-        media_id (list[str] | Unset): File ids from POST /media (UUIDs; also read as mediaIds). Used first, before
-            mediaUrls. An id that does not exist on your account is 404 media_not_found; one still importing is waited for,
-            then 409 media_processing. A value sent as text instead of a list is 400.
+        media_id (list[str] | Unset): File ids from POST /media, or from an upload link once POST
+            /media/uploads/{file_id}/complete said ready (UUIDs; also read as mediaIds). Used first, before mediaUrls. An id
+            that does not exist on your account is 404 media_not_found, and so is an upload link's file that is not ready
+            yet; one still importing is waited for, then 409 media_processing. A value sent as text instead of a list is
+            400.
     """
 
     text: str | Unset = UNSET

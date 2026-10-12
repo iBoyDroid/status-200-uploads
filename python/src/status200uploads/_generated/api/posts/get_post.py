@@ -84,7 +84,10 @@ def sync_detailed(
      The id is status200.post_id or status200.scheduled_post_id of a POST answer (its
     status200.status_url is this address), or an id from GET /posts. To wait for a post, read it every
     30 seconds until done is true, for up to 10 minutes. Another account's id is answered exactly like
-    an id that does not exist.
+    an id that does not exist. A post, and each network's result of a scheduled post, carries notices:
+    what we changed to get a TikTok photo post out (for example resized_for_tiktok, a photo sent as a
+    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; empty on
+    the other networks.
 
     Args:
         id (UUID):
@@ -118,7 +121,10 @@ def sync(
      The id is status200.post_id or status200.scheduled_post_id of a POST answer (its
     status200.status_url is this address), or an id from GET /posts. To wait for a post, read it every
     30 seconds until done is true, for up to 10 minutes. Another account's id is answered exactly like
-    an id that does not exist.
+    an id that does not exist. A post, and each network's result of a scheduled post, carries notices:
+    what we changed to get a TikTok photo post out (for example resized_for_tiktok, a photo sent as a
+    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; empty on
+    the other networks.
 
     Args:
         id (UUID):
@@ -147,7 +153,10 @@ async def asyncio_detailed(
      The id is status200.post_id or status200.scheduled_post_id of a POST answer (its
     status200.status_url is this address), or an id from GET /posts. To wait for a post, read it every
     30 seconds until done is true, for up to 10 minutes. Another account's id is answered exactly like
-    an id that does not exist.
+    an id that does not exist. A post, and each network's result of a scheduled post, carries notices:
+    what we changed to get a TikTok photo post out (for example resized_for_tiktok, a photo sent as a
+    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; empty on
+    the other networks.
 
     Args:
         id (UUID):
@@ -179,7 +188,10 @@ async def asyncio(
      The id is status200.post_id or status200.scheduled_post_id of a POST answer (its
     status200.status_url is this address), or an id from GET /posts. To wait for a post, read it every
     30 seconds until done is true, for up to 10 minutes. Another account's id is answered exactly like
-    an id that does not exist.
+    an id that does not exist. A post, and each network's result of a scheduled post, carries notices:
+    what we changed to get a TikTok photo post out (for example resized_for_tiktok, a photo sent as a
+    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; empty on
+    the other networks.
 
     Args:
         id (UUID):

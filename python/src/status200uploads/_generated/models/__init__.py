@@ -28,15 +28,19 @@ from .instagram_options import InstagramOptions
 from .instagram_options_post_type import InstagramOptionsPostType
 from .instagram_posting_options import InstagramPostingOptions
 from .linked_in_options import LinkedInOptions
+from .list_media_files_type import ListMediaFilesType
 from .list_posts_kind import ListPostsKind
 from .list_posts_status_item import ListPostsStatusItem
 from .media_error import MediaError
+from .media_file import MediaFile
+from .media_file_list import MediaFileList
 from .media_import_ready import MediaImportReady
 from .media_import_request import MediaImportRequest
 from .media_import_started import MediaImportStarted
 from .media_status import MediaStatus
 from .network_options import NetworkOptions
 from .network_options_options_type_0 import NetworkOptionsOptionsType0
+from .photo_size import PhotoSize
 from .pinterest_options import PinterestOptions
 from .pinterest_posting_options import PinterestPostingOptions
 from .pinterest_posting_options_boards_item import PinterestPostingOptionsBoardsItem
@@ -66,6 +70,20 @@ from .threads_options import ThreadsOptions
 from .tik_tok_options import TikTokOptions
 from .tik_tok_options_privacy_level import TikTokOptionsPrivacyLevel
 from .tik_tok_posting_options import TikTokPostingOptions
+from .upload_cancelled import UploadCancelled
+from .upload_link import UploadLink
+from .upload_link_error import UploadLinkError
+from .upload_link_error_response import UploadLinkErrorResponse
+from .upload_link_request import UploadLinkRequest
+from .upload_link_request_runner import UploadLinkRequestRunner
+from .upload_link_request_shell import UploadLinkRequestShell
+from .upload_link_upload import UploadLinkUpload
+from .upload_link_uploader import UploadLinkUploader
+from .upload_ready import UploadReady
+from .upload_token_request import UploadTokenRequest
+from .upload_token_request_runner import UploadTokenRequestRunner
+from .upload_token_request_shell import UploadTokenRequestShell
+from .upload_verifying import UploadVerifying
 from .warning import Warning_
 from .x_options import XOptions
 from .x_options_who_can_reply import XOptionsWhoCanReply
@@ -104,15 +122,19 @@ __all__ = (
     "InstagramOptionsPostType",
     "InstagramPostingOptions",
     "LinkedInOptions",
+    "ListMediaFilesType",
     "ListPostsKind",
     "ListPostsStatusItem",
     "MediaError",
+    "MediaFile",
+    "MediaFileList",
     "MediaImportReady",
     "MediaImportRequest",
     "MediaImportStarted",
     "MediaStatus",
     "NetworkOptions",
     "NetworkOptionsOptionsType0",
+    "PhotoSize",
     "PinterestOptions",
     "PinterestPostingOptions",
     "PinterestPostingOptionsBoardsItem",
@@ -142,6 +164,20 @@ __all__ = (
     "TikTokOptions",
     "TikTokOptionsPrivacyLevel",
     "TikTokPostingOptions",
+    "UploadCancelled",
+    "UploadLink",
+    "UploadLinkError",
+    "UploadLinkErrorResponse",
+    "UploadLinkRequest",
+    "UploadLinkRequestRunner",
+    "UploadLinkRequestShell",
+    "UploadLinkUpload",
+    "UploadLinkUploader",
+    "UploadReady",
+    "UploadTokenRequest",
+    "UploadTokenRequestRunner",
+    "UploadTokenRequestShell",
+    "UploadVerifying",
     "Warning_",
     "XOptions",
     "XOptionsWhoCanReply",

@@ -16,8 +16,8 @@ class MediaImportRequest:
         {'url': 'https://example.com/video.mp4'}
 
     Attributes:
-        url (str): A public http or https URL (port 80 or 443) of the image or video file itself (JPG, PNG, WebP, MP4,
-            MOV, WebM), never a web page that shows it (415).
+        url (str): A public http or https URL (port 80 or 443) of the image or video file itself: JPEG, PNG, WebP, MP4
+            (M4V too), MOV or WebM. A web page that shows it, or a file of another type (GIF, HEIC, SVG ...), is 415.
     """
 
     url: str
