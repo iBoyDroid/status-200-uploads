@@ -461,6 +461,7 @@ function postRead(
 			at: '2026-09-28T10:00:00.000Z',
 			updated_at: '2026-09-28T10:00:05.000Z',
 			scheduled_post_id: null,
+			notices: [],
 			figures: null,
 		},
 	};

@@ -179,10 +179,14 @@ class TestAnswers:
         assert {"error", "code", "retry_after_seconds"} <= set(media_error)
         assert "done" in schema(spec, "PostItem")["required"]
         assert "next_cursor" in schema(spec, "PostList")["required"]
+        # uploading and verifying are an upload link's file: wait_for_media() reads on, as for
+        # processing, until ready or failed.
         assert set(schema(spec, "MediaStatus")["properties"]["status"]["x-known-values"]) == {
             "processing",
             "ready",
             "failed",
+            "uploading",
+            "verifying",
         }
         assert schema(spec, "DryRunReport")["properties"]["dry_run"]["const"] is True
 
