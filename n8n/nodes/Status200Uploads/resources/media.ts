@@ -24,7 +24,8 @@ export const mediaOperation: INodeProperties = {
 			name: 'Import From URL',
 			value: 'importFromUrl',
 			action: 'Import media from a URL',
-			description: 'Import an image or a video from a public URL, for Post: Create',
+			description:
+				'Import an image or a video from a public URL (or a share link, where share links are on for your account), for Post: Create',
 			routing: routingFor('media.importFromUrl'),
 		},
 	],
@@ -41,7 +42,7 @@ export const mediaFields: INodeProperties[] = [
 		placeholder: 'e.g. https://example.com/video.mp4',
 		displayOptions: { show: forImport },
 		description:
-			'The public http or https URL of the image or video file itself (JPG, PNG, WebP, MP4, MOV, WebM), not a web page that shows it. Images up to 20 MB, videos up to 5 GB.',
+			'The public http or https URL of the image or video file itself (JPG, PNG, WebP, MP4, M4V, MOV, WebM), not a web page that shows it. Where share links are on for your account, a Google Drive, Dropbox or OneDrive share link of the file works too. Images up to 20 MB, videos up to 5 GB.',
 	},
 	{
 		displayName: 'Options',

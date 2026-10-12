@@ -31,6 +31,19 @@ from status200uploads._retry import DEFAULT_WAIT_SECONDS, UNAVAILABLE_CODES
 
 METHODS = ("get", "put", "post", "delete", "patch")
 
+#: The main address's operations that Status200 does not send, each with its module in
+#: status200uploads.api.media: for now they are offered only through that generated typed layer. The
+#: upload links are made for AI apps that run a command on the computer the file is on;
+#: list_media_files can be wrapped later. Any other operation that Status200 does not send still
+#: fails test_every_operation_of_the_main_address_is_offered.
+TYPED_LAYER_ONLY = {
+    ("POST", "/media/uploads"): "create_upload_link",
+    ("POST", "/media/uploads/{file_id}/token"): "renew_upload_token",
+    ("POST", "/media/uploads/{file_id}/complete"): "complete_upload",
+    ("DELETE", "/media/uploads/{file_id}"): "cancel_upload",
+    ("GET", "/media/files"): "list_media_files",
+}
+
 
 def v2_operations(spec: dict) -> dict[tuple[str, str], dict]:
     """The main address's operations: paths without a server of their own."""
@@ -124,8 +137,15 @@ class TestRequests:
             assert "Idempotency-Key" in {p["name"] for p in params if p["in"] == "header"}
 
     def test_every_operation_of_the_main_address_is_offered(self, spec) -> None:
+        operations = v2_operations(spec)
         offered = {(method, path) for method, path, _ in ENDPOINTS.values()}
-        assert offered == set(v2_operations(spec))
+        # Status200 sends every operation but those of TYPED_LAYER_ONLY, and none of those.
+        assert offered == set(operations) - set(TYPED_LAYER_ONLY)
+        for (method, path), name in TYPED_LAYER_ONLY.items():
+            found = operations.get((method, path))
+            assert found is not None, f"{method} {path} is not an operation of the main address"
+            assert snake(found["op"]["operationId"]) == name, f"{method} {path}"
+            assert hasattr(getattr(api_shim.media, name), "sync_detailed"), name
 
     def test_nothing_of_the_older_address_is_used(self, spec) -> None:
         older = {path for path, item in spec["paths"].items() if "servers" in item}

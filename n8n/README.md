@@ -49,7 +49,7 @@ with it can post as you: never put it in a workflow's fields or share it. More i
 | Post | Cancel | Stop a scheduled or queued post that has not gone out |
 | Account | Get Many | Your profiles and their connected networks |
 | Account | Get Posting Options | What a profile may do on each network: TikTok privacy levels, Pinterest boards, Skool groups, the Instagram limit |
-| Media | Import From URL | Import an image or a video from a public URL, and wait until it is ready |
+| Media | Import From URL | Import an image or a video from a public URL (or, where share links are on for your account, a Google Drive, Dropbox or OneDrive share link), and wait until it is ready |
 | Media | Get | Read how an import is going |
 
 The node can also be used as a tool by n8n's AI Agent.
@@ -80,8 +80,10 @@ for example `{"tiktok": {"isAiGenerated": true}}`. The fields are those of the
 **Media is sent by URL.** Give public URLs of the files (one per line), or import a file first with
 Media: Import From URL and send its **File ID**. Importing first suits large videos: the import can take
 longer than one request. A file from an earlier node (binary data) must first be stored at a public URL
-(for example S3, a Google Drive or Dropbox share, or Cloudinary). URLs that need a sign-in, or private
-addresses, cannot be fetched.
+(for example S3 or Cloudinary). A Google Drive, Dropbox or OneDrive share link put in **Media URLs** is
+not converted: import it with Media: Import From URL, which converts such links where share links are on
+for your account (see "Share links" in the [API docs](https://status200uploads.com/docs/api)), and send
+its **File ID**. URLs that need a sign-in, or private addresses, cannot be fetched.
 
 **Scheduling.** Set **When** to **At a Set Time** and pick **Scheduled For**, up to 365 days ahead. A
 date and time without a time zone (what the date picker stores) is read in the workflow's time zone

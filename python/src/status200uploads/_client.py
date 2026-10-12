@@ -642,8 +642,10 @@ class Status200:
         interval: float = MEDIA_POLL_INTERVAL,
         timeout: float = POLL_TIMEOUT,
     ) -> dict[str, Any]:
-        """Imports an image or a video from a public URL (POST /media), then, with wait=True,
-        follows the import until it is ready. Send its file_id in post.content.mediaID.
+        """Imports an image or a video (POST /media) from a public URL of the file itself or, where
+        share links are on for the account, from a Google Drive, Dropbox or OneDrive share link of
+        it; then, with wait=True, follows the import until it is ready. Send its file_id in
+        post.content.mediaID.
 
         Returns:
             The media: file_id, status ("ready", or "processing" when timeout passed first:
@@ -674,8 +676,9 @@ class Status200:
         return media
 
     def get_media(self, file_id: str) -> dict[str, Any]:
-        """An import's status (GET /media?file_id=): status processing, ready or failed (with the
-        reason in error), size, type, progress."""
+        """The status of an import, or of an upload link's file (GET /media?file_id=): processing,
+        ready or failed (with the reason in error), or, for an upload link's file not in the media
+        library yet, uploading or verifying; size, type, progress."""
         file_id = _uuid(file_id, "file_id")
         return self._read("/media", what="GET /media", params={"file_id": file_id})
 
@@ -687,8 +690,9 @@ class Status200:
         timeout: float = POLL_TIMEOUT,
     ) -> dict[str, Any]:
         """Reads an import every ``interval`` seconds until it is ready, for up to ``timeout``
-        seconds. Returns the last status (still "processing" when timeout passed first); raises
-        Status200Error (reason "import_failed") when the import failed."""
+        seconds. Returns the last status (still "processing", or "uploading" or "verifying" for an
+        upload link's file, when timeout passed first); raises Status200Error (reason
+        "import_failed") when the import failed."""
         if interval <= 0:
             raise ValueError("interval must be more than 0")
         reads = max(1, int(timeout // interval))

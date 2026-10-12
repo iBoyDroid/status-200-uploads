@@ -199,21 +199,69 @@ describe('the retry table is the file’s', () => {
 	});
 });
 
+// The upload links (a file sent from a computer): POST /media/uploads, POST
+// /media/uploads/{file_id}/token, POST /media/uploads/{file_id}/complete and DELETE
+// /media/uploads/{file_id}. The node never sends them, so the codes that only they answer need no fix
+// line, though the retry table lists them. A code that a request the node sends can answer is never
+// left out: the second test below holds this list to that.
+const UPLOAD_LINK_ENDPOINTS = [
+	'POST /media/uploads',
+	'POST /media/uploads/{file_id}/token',
+	'POST /media/uploads/{file_id}/complete',
+	'DELETE /media/uploads/{file_id}',
+];
+const UPLOAD_LINK_ONLY_CODES = [
+	'too_many_open_uploads',
+	'upload_being_checked',
+	'invalid_request',
+	'unsupported_media_type',
+	'media_too_large',
+	'account_being_deleted',
+	'upload_links_paused',
+	'upload_already_received',
+	'upload_closed',
+	'renewals_exhausted',
+	'upload_incomplete',
+	'upload_rejected',
+	'upload_failed',
+	'upload_expired',
+];
+
 describe('the node has a fix line for every code of the requests it sends', () => {
 	const used = Object.values(ENDPOINTS).map((e) => ({
 		e,
 		op: v2Operation(e.method, e.path) as Json,
 	}));
+	const codesOf = (ops: Json[]) =>
+		new Set(ops.flatMap((op) => errorCodesOf(op).map(({ code }) => code)));
 
-	it('every x-error-codes code, and every code of the retry table that is not a success', () => {
-		const codes = new Set<string>();
-		for (const { op } of used) for (const { code } of errorCodesOf(op)) codes.add(code);
+	it('every x-error-codes code, and every code of the retry table that is not a success, but the upload links’ own', () => {
+		const codes = codesOf(used.map(({ op }) => op));
 		for (const [code, rule] of Object.entries(spec.components['x-status200-retry'].by_code)) {
-			if (rule !== 'not_a_failure') codes.add(code);
+			if (rule !== 'not_a_failure' && !UPLOAD_LINK_ONLY_CODES.includes(code)) codes.add(code);
 		}
 		for (const code of ['not_found', 'method_not_allowed']) codes.add(code);
 		const missing = [...codes].filter((code) => !FIX_TEXT[code]);
 		expect(missing).toEqual([]);
+	});
+
+	it('the codes left out are answered by the upload links only, which the node never sends', () => {
+		const sent = Object.values(ENDPOINTS).map((e) => `${e.method} ${e.path}`);
+		const uploadLinks = v2Operations().filter((o) =>
+			UPLOAD_LINK_ENDPOINTS.includes(`${o.method} ${o.path}`),
+		);
+		expect(uploadLinks.map((o) => `${o.method} ${o.path}`).sort()).toEqual(
+			[...UPLOAD_LINK_ENDPOINTS].sort(),
+		);
+		for (const endpoint of UPLOAD_LINK_ENDPOINTS) expect(sent).not.toContain(endpoint);
+		const answeredByUploadLinks = codesOf(uploadLinks.map((o) => o.op));
+		const answeredBySent = codesOf(used.map(({ op }) => op));
+		for (const code of UPLOAD_LINK_ONLY_CODES) {
+			expect(answeredByUploadLinks.has(code), `${code}: no upload-link endpoint answers it`).toBe(
+				true,
+			);
+			expect(answeredBySent.has(code), `${code}: a request the node sends answers it`).toBe(false);
+		}
 	});
 
 	it('the fix lines follow n8n’s wording rules (no "error", "problem", "failure" or "mistake")', () => {

@@ -14,8 +14,10 @@ The rules:
     never                 the same request cannot succeed now;
     not_a_failure         accepted: it goes out on its own. Never sent again.
 
-REST refusals carry code and message (and upgrade_url on a plan refusal). They carry no next_step
-and no retry field: this table is how a client decides.
+Most REST refusals carry code and message only (and upgrade_url on a plan refusal); next_step and
+retry are the AI connector's. A refused share link on POST /media also carries next_step, and the
+upload-link endpoints (/media/uploads...) carry next_step and retry. This table is how a client
+decides.
 """
 
 from __future__ import annotations

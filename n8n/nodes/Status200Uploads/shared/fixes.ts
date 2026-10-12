@@ -3,10 +3,12 @@ import type { Answer } from './answer';
 import type { FailReason, Settled } from './retry';
 
 /**
- * The node's own "how to change it" line per code. REST refusals carry code and message only (and
- * upgrade_url on a plan refusal); next_step and retry exist only in the AI connector, so the node
- * supplies this text. test/contract.test.ts checks that every code the OpenAPI file lists for the
- * requests this node sends has a line here.
+ * The node's own "how to change it" line per code. Most REST refusals carry code and message only
+ * (and upgrade_url on a plan refusal); next_step and retry are the AI connector's (a refused share
+ * link also carries next_step), so the node supplies this text. test/contract.test.ts checks that
+ * every code the OpenAPI file lists for the requests this node sends has a line here, and every code
+ * of the file's retry table but those that only the upload-link endpoints (/media/uploads...)
+ * answer: the node never sends those requests.
  */
 export const FIX_TEXT: Record<string, string> = {
 	// 400
@@ -42,6 +44,21 @@ export const FIX_TEXT: Record<string, string> = {
 	skool_rejected:
 		'Skool refused the post, for the reason in the message. Change what it names, then send it again.',
 	category_required: 'This Skool group needs a category: set Label ID under Skool Options.',
+	// 400 of Media: Import From URL, a share link that cannot give one file
+	link_not_public:
+		'Share the file with "Anyone with the link" and import its whole link (a Dropbox link keeps its ?rlkey= part).',
+	link_is_folder:
+		'This link opens a folder. Open the folder, pick the photo or video, and import the share link of that file.',
+	link_not_found:
+		'The file was deleted or moved, or its link was turned off. Make a new share link of the file and import that one.',
+	link_temporarily_blocked:
+		'The provider is not letting anyone download this file for now (its own download limit, which usually clears within 24 hours). Try again tomorrow, or import the file from another public URL.',
+	link_not_a_file:
+		'This link opens an album, a document or a page, not one photo or video file. Import a public URL of the file itself, or share the file from Google Drive, Dropbox or OneDrive with "Anyone with the link" and import that link.',
+	link_not_supported:
+		'This kind of link cannot be imported (an iCloud Drive link or an older OneDrive link, for example). Share the file from Google Drive, Dropbox or OneDrive with "Anyone with the link" and import that link.',
+	share_links_paused:
+		'Links from this provider cannot be imported for now. Import a public URL of the file itself instead.',
 	// 401
 	unauthorized:
 		'Check the API key in the credential of this node. If it was deleted or switched off, create a new one in your Status 200 Uploads dashboard under API.',
@@ -63,6 +80,8 @@ export const FIX_TEXT: Record<string, string> = {
 	plan_required:
 		'Your plan does not include this network. Upgrade at the address below, or post to another network.',
 	forbidden: 'The network refused this for the profile, for the reason in the message.',
+	plan_limit_reached:
+		'Your plan does not include share links. Upgrade at the address below, or import a public URL of the file itself, which works on every plan.',
 	// 404
 	media_not_found:
 		'No imported file with this ID on your account. Import the file again with Media: Import From URL (files are kept for 7 days).',
@@ -93,6 +112,8 @@ export const FIX_TEXT: Record<string, string> = {
 	photo_format_not_supported:
 		'TikTok takes photos as JPEG or WebP, and this photo could not be converted. Send a JPEG.',
 	photo_too_large_to_convert: 'The photo is too large to convert for TikTok. Send a smaller JPEG.',
+	photo_too_large_to_resize:
+		'The photo is larger than TikTok takes, and no smaller copy can be made of it. Save it as a JPEG of at most 1080 x 1920 pixels (1920 x 1080 when wide), then send the post again.',
 	photo_conversion_failed: 'The photo could not be converted for TikTok. Send it as a JPEG.',
 	// 429
 	rate_limited:
@@ -124,6 +145,8 @@ export const FIX_TEXT: Record<string, string> = {
 	idempotency_unavailable:
 		'Nothing was sent: the Idempotency-Key could not be checked just now. Send it again in a few seconds.',
 	dry_run_unavailable: 'The check could not run just now. Send it again in a few seconds.',
+	uploads_busy:
+		'Nothing was imported: the plan behind this share link could not be read just now. Send it again in a minute (the node does, when Wait When Asked is on).',
 	skool_unavailable:
 		'Skool is not taking posts from Status 200 Uploads right now. Try again later.',
 	x_unavailable: 'X is not taking posts from Status 200 Uploads right now. Try again later.',

@@ -93,7 +93,7 @@ const createFields: INodeProperties[] = [
 	},
 	{
 		displayName:
-			'Media is sent by URL. To post a file from an earlier node (binary data), first store it at a public URL (for example S3, a Google Drive or Dropbox share, or Cloudinary).',
+			'Media is sent by URL. To post a file from an earlier node (binary data), first store it at a public URL (for example S3 or Cloudinary). A Google Drive, Dropbox or OneDrive share link is not converted here: import it with Media: Import From URL (it converts those links where share links are on for your account), then send its File ID.',
 		name: 'mediaNotice',
 		type: 'notice',
 		default: '',

@@ -70,9 +70,13 @@ Use `with Status200() as s200:` (or `s200.close()`) to close the connection when
 
 ## Media, TikTok and the other networks
 
-Media is sent by public URL: either straight in the post (`content.mediaUrls`), or imported first and
-sent by its `file_id` (`content.mediaID`). Importing first suits videos, since the import can take
-longer than one request.
+Media is sent by URL: a public URL of the file itself, either straight in the post
+(`content.mediaUrls`), or imported first and sent by its `file_id` (`content.mediaID`). Importing first
+suits videos, since the import can take longer than one request. Where share links are on for your
+account (see "Share links" in https://status200uploads.com/docs/api), `import_media()` also takes a
+Google Drive, Dropbox or OneDrive share link and imports the file it shares; a share link put straight
+into `mediaUrls` is never converted. A file on a computer goes through an upload link (paid plans),
+which `Status200` does not send: its operations are in `status200uploads.api.media`.
 
 ```python
 media = s200.import_media("https://example.com/video.mp4")  # waits until it is ready
