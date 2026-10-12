@@ -22,7 +22,10 @@ class InstagramOptions:
         post_type (InstagramOptionsPostType | Unset): Omitted, carousel for two or more files, reel for a single video,
             otherwise feed_image.
         share_to_feed (bool | Unset): Reels only. Default: True.
-        cover_url (str | Unset): A Reel's cover image URL (fetched by Instagram when the Reel goes out).
+        cover_url (str | Unset): A Reel's cover image URL (fetched by Instagram when the Reel goes out; not sent for
+            other post types). It must be a full web address starting with https:// or http://, or 400 bad_request with
+            error.field post.instagram.coverUrl. The spaces around it are removed before it is checked and sent, as for a
+            scheduled Reel, and a blank coverUrl means no cover.
         thumb_offset (float | Unset): A Reel's thumbnail offset in milliseconds.
         collaborators (list[str] | Unset): Usernames to invite as collaborators.
         location_id (str | Unset): A Facebook location id (feed images).

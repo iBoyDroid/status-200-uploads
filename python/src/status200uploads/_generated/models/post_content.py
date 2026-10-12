@@ -19,7 +19,12 @@ class PostContent:
             photo posts it fills the title or the description you do not send.
         media_urls (list[str] | Unset): Public URLs of the files. Whether a file is an image or a video is read from the
             end of its URL (.jpg, .png, .mp4 ...). A scheduled post fetches them when it goes out, not now (warning
-            media_url_not_kept). Not used when file ids are sent too.
+            media_url_not_kept). Not used when file ids are sent too. Each must be a full web address that a URL parser
+            reads, starting with https:// or http://; anything else (a file name joined in front of the address, a file
+            path, an empty value, a value that is not text) is 400 bad_request with error.field (for example
+            post.content.mediaUrls[0]), before anything is sent. Every item of content.mediaUrls is checked, even one the
+            network would not use (Pinterest, YouTube, a Facebook video and an Instagram Reel use only the first). An
+            address with spaces or other unusual characters that the parser reads is sent as it came.
         media_id (list[str] | Unset): File ids from POST /media, or from an upload link once POST
             /media/uploads/{file_id}/complete said ready (UUIDs; also read as mediaIds). Used first, before mediaUrls. An id
             that does not exist on your account is 404 media_not_found, and so is an upload link's file that is not ready

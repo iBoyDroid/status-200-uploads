@@ -89,8 +89,9 @@ paths:
         Order of checks on this address: method, JSON, key, dryRun flag
         (a dry run is forwarded here), post, platform, YouTube tags, scheduledFor, Idempotency-Key,
         accountId, profile (403 or 400), media ids exist (404); then the engine: the X/Skool plan gate (403), the 20-second
-        throttle (429), connection, media wait (about 12 seconds here, then 409), pre-post guards,
-        the scheduled branch (202), the allowance (429 monthly or 202 queued), the send.
+        throttle (429), connection, media wait (about 12 seconds here, then 409), the media addresses
+        (400 bad_request), pre-post guards, the scheduled branch (202), the allowance (429 monthly or
+        202 queued), the send.
 
 
         Media is required except for text posts on X, LinkedIn, Threads, Skool and Facebook. Every
@@ -160,7 +161,12 @@ paths:
         '202':
           $ref: '#/components/responses/Accepted'
         '400':
-          description: The request cannot be sent as it is. Nothing was sent.
+          description: >-
+            The request cannot be sent as it is. Nothing was sent. A media address that is not a web
+            address (a value of post.content.mediaUrls, or a Reel's post.instagram.coverUrl, that a URL
+            parser does not read as an http:// or https:// address) is bad_request with error.field
+            naming it, and no post is recorded. Every item of content.mediaUrls is checked, even one the
+            network would not use.
           x-error-codes: [bad_request, api_error, scheduled_for_invalid, youtube_tags_too_long, idempotency_key_invalid, profile_name_ambiguous, pinterest_board_required, media_wrong_for_post_type, options_outside_post, media_not_available, video_size_unknown, no_container, no_publish_id, pinterest_sandbox_board, pinterest_rejected, x_rejected, skool_rejected, category_required]
           content:
             application/json:
@@ -1432,7 +1438,9 @@ paths:
         '202':
           $ref: '#/components/responses/Accepted'
         '400':
-          description: The request cannot be sent as it is. Nothing was sent.
+          description: >-
+            The request cannot be sent as it is. Nothing was sent. A media address that is not a web
+            address is bad_request with error.field here too, as on /api/v2/posts.
           x-error-codes: [api_error, bad_request, scheduled_for_invalid, youtube_tags_too_long, idempotency_key_invalid, profile_name_ambiguous, pinterest_board_required, media_wrong_for_post_type, options_outside_post, media_not_available, video_size_unknown, no_container, no_publish_id, pinterest_sandbox_board, pinterest_rejected, x_rejected, skool_rejected, category_required]
           content:
             application/json:
@@ -2466,7 +2474,13 @@ components:
           description: >-
             Public URLs of the files. Whether a file is an image or a video is read from the end of its
             URL (.jpg, .png, .mp4 ...). A scheduled post fetches them when it goes out, not now (warning
-            media_url_not_kept). Not used when file ids are sent too.
+            media_url_not_kept). Not used when file ids are sent too. Each must be a full web address that
+            a URL parser reads, starting with https:// or http://; anything else (a file name joined in
+            front of the address, a file path, an empty value, a value that is not text) is 400 bad_request
+            with error.field (for example post.content.mediaUrls[0]), before anything is sent. Every item
+            of content.mediaUrls is checked, even one the network would not use (Pinterest, YouTube, a
+            Facebook video and an Instagram Reel use only the first). An address with spaces or other
+            unusual characters that the parser reads is sent as it came.
         mediaID:
           type: array
           items:
@@ -2540,7 +2554,11 @@ components:
           description: Reels only.
         coverUrl:
           type: string
-          description: A Reel's cover image URL (fetched by Instagram when the Reel goes out).
+          description: >-
+            A Reel's cover image URL (fetched by Instagram when the Reel goes out; not sent for other post
+            types). It must be a full web address starting with https:// or http://, or 400 bad_request
+            with error.field post.instagram.coverUrl. The spaces around it are removed before it is
+            checked and sent, as for a scheduled Reel, and a blank coverUrl means no cover.
         thumbOffset:
           type: number
           description: A Reel's thumbnail offset in milliseconds.
@@ -3041,6 +3059,10 @@ components:
           type: string
         field:
           type: string
+          description: >-
+            Where the refused value sits in the request, for example post.content.mediaUrls[0] or
+            post.instagram.coverUrl (bad_request for a media address that is not a web address,
+            media_not_available for a cover that is gone).
         upstream_status:
           type: integer
         attempts:

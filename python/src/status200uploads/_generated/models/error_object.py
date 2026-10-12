@@ -52,7 +52,9 @@ class ErrorObject:
             started_at (str | Unset):
             first_used_at (str | Unset):
             url (str | Unset):
-            field (str | Unset):
+            field (str | Unset): Where the refused value sits in the request, for example post.content.mediaUrls[0] or
+                post.instagram.coverUrl (bad_request for a media address that is not a web address, media_not_available for a
+                cover that is gone).
             upstream_status (int | Unset):
             attempts (int | Unset):
             ceiling (int | Unset):

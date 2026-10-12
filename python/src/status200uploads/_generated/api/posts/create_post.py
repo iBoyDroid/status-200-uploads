@@ -150,8 +150,8 @@ def sync_detailed(
     Order of checks on this address: method, JSON, key, dryRun flag (a dry run is forwarded here), post,
     platform, YouTube tags, scheduledFor, Idempotency-Key, accountId, profile (403 or 400), media ids
     exist (404); then the engine: the X/Skool plan gate (403), the 20-second throttle (429), connection,
-    media wait (about 12 seconds here, then 409), pre-post guards, the scheduled branch (202), the
-    allowance (429 monthly or 202 queued), the send.
+    media wait (about 12 seconds here, then 409), the media addresses (400 bad_request), pre-post
+    guards, the scheduled branch (202), the allowance (429 monthly or 202 queued), the send.
 
     Media is required except for text posts on X, LinkedIn, Threads, Skool and Facebook. Every answer
     arrives within about 25 seconds; a network slower than that is answered 202 still_publishing. Every
@@ -202,8 +202,8 @@ def sync(
     Order of checks on this address: method, JSON, key, dryRun flag (a dry run is forwarded here), post,
     platform, YouTube tags, scheduledFor, Idempotency-Key, accountId, profile (403 or 400), media ids
     exist (404); then the engine: the X/Skool plan gate (403), the 20-second throttle (429), connection,
-    media wait (about 12 seconds here, then 409), pre-post guards, the scheduled branch (202), the
-    allowance (429 monthly or 202 queued), the send.
+    media wait (about 12 seconds here, then 409), the media addresses (400 bad_request), pre-post
+    guards, the scheduled branch (202), the allowance (429 monthly or 202 queued), the send.
 
     Media is required except for text posts on X, LinkedIn, Threads, Skool and Facebook. Every answer
     arrives within about 25 seconds; a network slower than that is answered 202 still_publishing. Every
@@ -249,8 +249,8 @@ async def asyncio_detailed(
     Order of checks on this address: method, JSON, key, dryRun flag (a dry run is forwarded here), post,
     platform, YouTube tags, scheduledFor, Idempotency-Key, accountId, profile (403 or 400), media ids
     exist (404); then the engine: the X/Skool plan gate (403), the 20-second throttle (429), connection,
-    media wait (about 12 seconds here, then 409), pre-post guards, the scheduled branch (202), the
-    allowance (429 monthly or 202 queued), the send.
+    media wait (about 12 seconds here, then 409), the media addresses (400 bad_request), pre-post
+    guards, the scheduled branch (202), the allowance (429 monthly or 202 queued), the send.
 
     Media is required except for text posts on X, LinkedIn, Threads, Skool and Facebook. Every answer
     arrives within about 25 seconds; a network slower than that is answered 202 still_publishing. Every
@@ -299,8 +299,8 @@ async def asyncio(
     Order of checks on this address: method, JSON, key, dryRun flag (a dry run is forwarded here), post,
     platform, YouTube tags, scheduledFor, Idempotency-Key, accountId, profile (403 or 400), media ids
     exist (404); then the engine: the X/Skool plan gate (403), the 20-second throttle (429), connection,
-    media wait (about 12 seconds here, then 409), pre-post guards, the scheduled branch (202), the
-    allowance (429 monthly or 202 queued), the send.
+    media wait (about 12 seconds here, then 409), the media addresses (400 bad_request), pre-post
+    guards, the scheduled branch (202), the allowance (429 monthly or 202 queued), the send.
 
     Media is required except for text posts on X, LinkedIn, Threads, Skool and Facebook. Every answer
     arrives within about 25 seconds; a network slower than that is answered 202 still_publishing. Every
