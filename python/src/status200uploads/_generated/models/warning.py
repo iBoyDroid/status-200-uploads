@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
+from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -19,7 +20,10 @@ T = TypeVar("T", bound="Warning_")
 class Warning_:
     """Something the caller should know about a request that went through. The post was still sent. resized_for_tiktok (a
     TikTok photo larger than 1080 x 1920 sent as a smaller copy) also carries size (the photo, as it is shown) and
-    copy_size (what TikTok got); see https://status200uploads.com/docs/api#tiktok-photos.
+    copy_size (what TikTok got); see https://status200uploads.com/docs/api#tiktok-photos. moved_to_next_day is a notice
+    only (a post read back, never a publish answer): another network of the same scheduled post did not fit the day's
+    allowance while the post was going out and moved to the next day as a scheduled post of its own (scheduled_post_id,
+    platforms). Do not send those networks again: that post sends them.
 
         Attributes:
             code (str):
@@ -31,6 +35,9 @@ class Warning_:
             from_ (str | Unset): converted_to_jpeg and resized_for_tiktok - the photo's own format.
             size (PhotoSize | Unset): A photo's size in pixels, as the photo is shown (after its EXIF orientation).
             copy_size (PhotoSize | Unset): A photo's size in pixels, as the photo is shown (after its EXIF orientation).
+            scheduled_post_id (UUID | Unset): moved_to_next_day (a notice of a post read back) - the scheduled post the
+                networks that did not fit the day moved to, at the same time on the next day.
+            platforms (list[str] | Unset): moved_to_next_day - the networks that moved.
     """
 
     code: str
@@ -42,6 +49,8 @@ class Warning_:
     from_: str | Unset = UNSET
     size: PhotoSize | Unset = UNSET
     copy_size: PhotoSize | Unset = UNSET
+    scheduled_post_id: UUID | Unset = UNSET
+    platforms: list[str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -67,6 +76,14 @@ class Warning_:
         if not isinstance(self.copy_size, Unset):
             copy_size = self.copy_size.to_dict()
 
+        scheduled_post_id: str | Unset = UNSET
+        if not isinstance(self.scheduled_post_id, Unset):
+            scheduled_post_id = str(self.scheduled_post_id)
+
+        platforms: list[str] | Unset = UNSET
+        if not isinstance(self.platforms, Unset):
+            platforms = self.platforms
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -89,6 +106,10 @@ class Warning_:
             field_dict["size"] = size
         if copy_size is not UNSET:
             field_dict["copy_size"] = copy_size
+        if scheduled_post_id is not UNSET:
+            field_dict["scheduled_post_id"] = scheduled_post_id
+        if platforms is not UNSET:
+            field_dict["platforms"] = platforms
 
         return field_dict
 
@@ -125,6 +146,15 @@ class Warning_:
         else:
             copy_size = PhotoSize.from_dict(_copy_size)
 
+        _scheduled_post_id = d.pop("scheduled_post_id", UNSET)
+        scheduled_post_id: UUID | Unset
+        if isinstance(_scheduled_post_id, Unset):
+            scheduled_post_id = UNSET
+        else:
+            scheduled_post_id = UUID(_scheduled_post_id)
+
+        platforms = cast(list[str], d.pop("platforms", UNSET))
+
         warning = cls(
             code=code,
             message=message,
@@ -135,6 +165,8 @@ class Warning_:
             from_=from_,
             size=size,
             copy_size=copy_size,
+            scheduled_post_id=scheduled_post_id,
+            platforms=platforms,
         )
 
         warning.additional_properties = d

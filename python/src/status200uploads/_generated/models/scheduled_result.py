@@ -23,10 +23,11 @@ class ScheduledResult:
         done (bool):
         publish_id (None | str):
         permalink (None | str):
-        error_message (None | str):
+        error_message (None | str): Why it failed or was not sent.
         notices (list[Warning_]): That network's post's notices (see PostItem): what we changed to get a TikTok photo
-            post out, for example a photo sent as a smaller copy. Empty on the other networks, and while there is no post
-            (pending, not_sent).
+            post out, for example a photo sent as a smaller copy, and moved_to_next_day on any network (another network of
+            this scheduled post moved to the next day as a scheduled post of its own). Empty on the other networks when
+            nothing moved, and while there is no post (pending, not_sent).
     """
 
     platform: str

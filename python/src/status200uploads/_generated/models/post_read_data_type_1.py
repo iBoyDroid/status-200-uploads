@@ -26,7 +26,11 @@ class PostReadDataType1:
         profile_id (None | str):
         platforms (list[str]):
         status (str):
-        outcome (str):
+        outcome (str): What became of it, read from each network's result. partly_failed: some networks went out and
+            some failed or were not sent (see results). A network that did not fit the day's allowance because the day
+            filled up while the post was going out is not one of them: it left platforms for a scheduled post of its own at
+            the same time on the next day (waiting), so this post reads as what went out (success when the rest did), and
+            each result that went out carries a moved_to_next_day notice whose scheduled_post_id names that post.
         done (bool):
         media_type (None | str):
         at (datetime.datetime | None):

@@ -86,8 +86,9 @@ def sync_detailed(
     30 seconds until done is true, for up to 10 minutes. Another account's id is answered exactly like
     an id that does not exist. A post, and each network's result of a scheduled post, carries notices:
     what we changed to get a TikTok photo post out (for example resized_for_tiktok, a photo sent as a
-    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; empty on
-    the other networks.
+    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; on the
+    other networks only moved_to_next_day (another network of the same scheduled post moved to the next
+    day as a scheduled post of its own, which its scheduled_post_id names).
 
     Args:
         id (UUID):
@@ -123,8 +124,9 @@ def sync(
     30 seconds until done is true, for up to 10 minutes. Another account's id is answered exactly like
     an id that does not exist. A post, and each network's result of a scheduled post, carries notices:
     what we changed to get a TikTok photo post out (for example resized_for_tiktok, a photo sent as a
-    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; empty on
-    the other networks.
+    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; on the
+    other networks only moved_to_next_day (another network of the same scheduled post moved to the next
+    day as a scheduled post of its own, which its scheduled_post_id names).
 
     Args:
         id (UUID):
@@ -155,8 +157,9 @@ async def asyncio_detailed(
     30 seconds until done is true, for up to 10 minutes. Another account's id is answered exactly like
     an id that does not exist. A post, and each network's result of a scheduled post, carries notices:
     what we changed to get a TikTok photo post out (for example resized_for_tiktok, a photo sent as a
-    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; empty on
-    the other networks.
+    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; on the
+    other networks only moved_to_next_day (another network of the same scheduled post moved to the next
+    day as a scheduled post of its own, which its scheduled_post_id names).
 
     Args:
         id (UUID):
@@ -190,8 +193,9 @@ async def asyncio(
     30 seconds until done is true, for up to 10 minutes. Another account's id is answered exactly like
     an id that does not exist. A post, and each network's result of a scheduled post, carries notices:
     what we changed to get a TikTok photo post out (for example resized_for_tiktok, a photo sent as a
-    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; empty on
-    the other networks.
+    smaller copy), kept when TikTok took the post, so a post sent by a schedule says it too; on the
+    other networks only moved_to_next_day (another network of the same scheduled post moved to the next
+    day as a scheduled post of its own, which its scheduled_post_id names).
 
     Args:
         id (UUID):

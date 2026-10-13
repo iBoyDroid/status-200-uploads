@@ -332,7 +332,9 @@ paths:
         exactly like an id that does not exist. A post, and each network's result of a scheduled
         post, carries notices: what we changed to get a TikTok photo post out (for example
         resized_for_tiktok, a photo sent as a smaller copy), kept when TikTok took the post, so a
-        post sent by a schedule says it too; empty on the other networks.
+        post sent by a schedule says it too; on the other networks only moved_to_next_day (another
+        network of the same scheduled post moved to the next day as a scheduled post of its own,
+        which its scheduled_post_id names).
       responses:
         '200':
           description: A post (with figures) or a scheduled post (with results).
@@ -2717,7 +2719,7 @@ components:
       properties:
         code:
           type: string
-          x-known-values: [unknown_field, field_not_used, options_outside_post, converted_to_jpeg, resized_for_tiktok, title_shortened, description_shortened, characters_removed, text_partly_used, title_missing, media_url_not_kept, skool_one_post_per_hour, posts_close_together, caption_over_limit, unknown_parameter]
+          x-known-values: [unknown_field, field_not_used, options_outside_post, converted_to_jpeg, resized_for_tiktok, title_shortened, description_shortened, characters_removed, text_partly_used, title_missing, media_url_not_kept, skool_one_post_per_hour, posts_close_together, caption_over_limit, unknown_parameter, moved_to_next_day]
         message:
           type: string
         field:
@@ -2740,11 +2742,25 @@ components:
           $ref: '#/components/schemas/PhotoSize'
         copy_size:
           $ref: '#/components/schemas/PhotoSize'
+        scheduled_post_id:
+          type: string
+          format: uuid
+          description: >-
+            moved_to_next_day (a notice of a post read back) - the scheduled post the networks that did
+            not fit the day moved to, at the same time on the next day.
+        platforms:
+          type: array
+          items:
+            type: string
+          description: moved_to_next_day - the networks that moved.
       description: >-
         Something the caller should know about a request that went through. The post was still sent.
         resized_for_tiktok (a TikTok photo larger than 1080 x 1920 sent as a smaller copy) also carries
         size (the photo, as it is shown) and copy_size (what TikTok got); see
-        https://status200uploads.com/docs/api#tiktok-photos.
+        https://status200uploads.com/docs/api#tiktok-photos. moved_to_next_day is a notice only (a post
+        read back, never a publish answer): another network of the same scheduled post did not fit the
+        day's allowance while the post was going out and moved to the next day as a scheduled post of
+        its own (scheduled_post_id, platforms). Do not send those networks again: that post sends them.
 
     PhotoSize:
       type: object
@@ -3470,8 +3486,11 @@ components:
             of the text (title_shortened, description_shortened, text_partly_used). Each entry has
             code and message and, for a photo, photo (for a smaller copy also photos, size and
             copy_size); the answer's from and field are not kept. Kept also when the post went out
-            through a schedule. Empty when
-            there is none, and on every other network: there, what we changed (a YouTube title or
+            through a schedule. On any network, moved_to_next_day: another network of the same
+            scheduled post did not fit the day's allowance (the day filled up while the post was going
+            out) and moved to the same time on the next day as a scheduled post of its own, which
+            scheduled_post_id names, with the networks in platforms; do not send them again. Empty when
+            there is none; on every other network nothing else: there, what we changed (a YouTube title or
             description we shortened, for example) is said only in the warnings of the answer that
             sent or scheduled the post. See https://status200uploads.com/docs/api#tiktok-photos.
 
@@ -3497,6 +3516,13 @@ components:
         outcome:
           type: string
           x-known-values: [waiting, cancelled, sending, success, failed, partly_failed, unconfirmed]
+          description: >-
+            What became of it, read from each network's result. partly_failed: some networks went out
+            and some failed or were not sent (see results). A network that did not fit the day's
+            allowance because the day filled up while the post was going out is not one of them: it
+            left platforms for a scheduled post of its own at the same time on the next day (waiting),
+            so this post reads as what went out (success when the rest did), and each result that went
+            out carries a moved_to_next_day notice whose scheduled_post_id names that post.
         done:
           type: boolean
         media_type:
@@ -3541,14 +3567,17 @@ components:
         error_message:
           type: [string, 'null']
           maxLength: 1000
+          description: Why it failed or was not sent.
         notices:
           type: array
           items:
             $ref: '#/components/schemas/Warning'
           description: >-
             That network's post's notices (see PostItem): what we changed to get a TikTok photo post
-            out, for example a photo sent as a smaller copy. Empty on the other networks, and while
-            there is no post (pending, not_sent).
+            out, for example a photo sent as a smaller copy, and moved_to_next_day on any network
+            (another network of this scheduled post moved to the next day as a scheduled post of its
+            own). Empty on the other networks when nothing moved, and while there is no post (pending,
+            not_sent).
 
     Figures:
       type: object

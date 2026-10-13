@@ -40,7 +40,10 @@ class PostReadDataType0:
             (converted_to_jpeg), a title or description shortened or made from part of the text (title_shortened,
             description_shortened, text_partly_used). Each entry has code and message and, for a photo, photo (for a smaller
             copy also photos, size and copy_size); the answer's from and field are not kept. Kept also when the post went
-            out through a schedule. Empty when there is none, and on every other network: there, what we changed (a YouTube
+            out through a schedule. On any network, moved_to_next_day: another network of the same scheduled post did not
+            fit the day's allowance (the day filled up while the post was going out) and moved to the same time on the next
+            day as a scheduled post of its own, which scheduled_post_id names, with the networks in platforms; do not send
+            them again. Empty when there is none; on every other network nothing else: there, what we changed (a YouTube
             title or description we shortened, for example) is said only in the warnings of the answer that sent or
             scheduled the post. See https://status200uploads.com/docs/api#tiktok-photos.
         figures (Figures | None): null unless the post succeeded.
