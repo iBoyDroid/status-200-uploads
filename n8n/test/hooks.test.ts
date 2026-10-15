@@ -4,7 +4,7 @@
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { API_BASE_URL, USER_AGENT } from '../nodes/Status200Uploads/shared/constants';
-import { FakeHttp, itemContext, json, locator, runItem } from './support/fake';
+import { FakeHttp, itemContext, json, locator, resolveParameters, runItem } from './support/fake';
 import { responseExamples } from './support/spec';
 
 const slept = vi.hoisted(() => ({ ms: [] as number[] }));
@@ -564,24 +564,23 @@ describe('Account', () => {
 		});
 	});
 
-	it('Get Posting Options saved by 0.1.1 (Platforms and Skool Group Slug at the top): n8n drops both, so every connected network is asked for', async () => {
+	it('Get Posting Options saved by 0.1.0 or 0.1.1 (Platforms and Skool Group Slug at the top): n8n drops both, so every connected network is asked for', async () => {
 		// n8n keeps only the parameters a node declares (NodeHelpers.getNodeParameters, as the editor
 		// and every execution run it), so these two top-level values are never read again. The CHANGELOG
 		// and the README say so.
+		const saved = {
+			resource: 'account',
+			operation: 'getPostingOptions',
+			profile: locator(accounts[0].profile_id),
+			platforms: ['tiktok'],
+			skoolGroupSlug: 'my-group',
+		};
+		const stored = resolveParameters(saved);
+		expect(stored).not.toHaveProperty('platforms');
+		expect(stored).not.toHaveProperty('skoolGroupSlug');
+		expect(stored.options).toEqual({});
 		const http = new FakeHttp().answer(json(200, { data: { networks: [] } }));
-		await runItem(
-			itemContext(
-				{
-					resource: 'account',
-					operation: 'getPostingOptions',
-					profile: locator(accounts[0].profile_id),
-					platforms: ['tiktok'],
-					skoolGroupSlug: 'my-group',
-				},
-				http,
-			),
-			http,
-		);
+		await runItem(itemContext(saved, http), http);
 		expect(http.sent[0].qs).toEqual({});
 	});
 
