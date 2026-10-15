@@ -143,6 +143,47 @@ describe('parameters, as the n8n editor resolves them', () => {
 		expect(Object.keys(issues?.parameters ?? {})).toContain('scheduledFor');
 	});
 
+	it('Account: Get Posting Options shows the Account and its Options, nothing more (n8n’s review)', () => {
+		const stored = resolveParameters({ resource: 'account', operation: 'getPostingOptions' });
+		expect(Object.keys(stored).sort()).toEqual(['operation', 'options', 'profile', 'resource']);
+		expect(stored.options).toEqual({});
+		const withOptions = resolveParameters({
+			resource: 'account',
+			operation: 'getPostingOptions',
+			options: { platforms: ['skool'], skoolGroupSlug: 'my-group' },
+		});
+		expect(withOptions.options).toEqual({ platforms: ['skool'], skoolGroupSlug: 'my-group' });
+		// Only the Account is needed.
+		expect(
+			issuesFor({ resource: 'account', operation: 'getPostingOptions', profile: account }),
+		).toBeNull();
+	});
+
+	it('every Options collection is built the same way: Options, Add Option, empty, fields sorted', () => {
+		const collections = description.properties.filter((p) => p.name === 'options');
+		expect(collections.map((p) => String(p.displayOptions?.show?.resource)).sort()).toEqual([
+			'account',
+			'media',
+			'post',
+		]);
+		for (const collection of collections) {
+			expect(collection).toMatchObject({
+				displayName: 'Options',
+				type: 'collection',
+				placeholder: 'Add Option',
+				default: {},
+			});
+			const names = (collection.options as INodeProperties[]).map((o) => o.displayName);
+			expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+		}
+		const account = collections.find((p) => p.displayOptions?.show?.resource?.[0] === 'account');
+		expect(account?.displayOptions?.show?.operation).toEqual(['getPostingOptions']);
+		expect(account?.options).toMatchObject([
+			{ name: 'platforms', type: 'multiOptions', default: [] },
+			{ name: 'skoolGroupSlug', type: 'string', default: '' },
+		]);
+	});
+
 	it('another network’s fields are dropped from the stored parameters', () => {
 		const stored = resolveParameters({
 			resource: 'post',

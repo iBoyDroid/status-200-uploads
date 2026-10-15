@@ -263,10 +263,11 @@ export function buildRequest(p: ParamReader, env: RequestEnv): ApiRequest {
 				'Account',
 				'Choose the account from the list, or give its ID (profile_id of Account: Get Many)',
 			);
+			// Both sit in Options; left out, the API answers for every connected network.
 			const qs: IDataObject = {};
-			const platforms = splitList(p.get('platforms', []), /,/);
+			const platforms = splitList(p.get('options.platforms', []), /,/);
 			if (platforms.length > 0) qs.platforms = platforms.join(',');
-			const slug = str(p.get('skoolGroupSlug', ''));
+			const slug = str(p.get('options.skoolGroupSlug', ''));
 			if (slug !== '') qs.skool_group_slug = slug;
 			return request(operation, `/accounts/${id}/options`, { qs });
 		}

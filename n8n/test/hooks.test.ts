@@ -531,7 +531,28 @@ describe('Account', () => {
 					resource: 'account',
 					operation: 'getPostingOptions',
 					profile: locator(accounts[0].profile_id),
-					platforms: ['tiktok'],
+					options: { platforms: ['tiktok', 'skool'], skoolGroupSlug: 'my-group' },
+				},
+				http,
+			),
+			http,
+		);
+		expect(http.sent[0]).toMatchObject({
+			method: 'GET',
+			url: `/accounts/${accounts[0].profile_id}/options`,
+			qs: { platforms: 'tiktok,skool', skool_group_slug: 'my-group' },
+		});
+		expect(out[0].json).toEqual(data);
+	});
+
+	it('Get Posting Options without Options: every connected network, no Skool group slug', async () => {
+		const http = new FakeHttp().answer(json(200, { data: { networks: [] } }));
+		await runItem(
+			itemContext(
+				{
+					resource: 'account',
+					operation: 'getPostingOptions',
+					profile: locator(accounts[0].profile_id),
 				},
 				http,
 			),
@@ -539,9 +560,29 @@ describe('Account', () => {
 		);
 		expect(http.sent[0]).toMatchObject({
 			url: `/accounts/${accounts[0].profile_id}/options`,
-			qs: { platforms: 'tiktok' },
+			qs: {},
 		});
-		expect(out[0].json).toEqual(data);
+	});
+
+	it('Get Posting Options saved by 0.1.1 (Platforms and Skool Group Slug at the top): n8n drops both, so every connected network is asked for', async () => {
+		// n8n keeps only the parameters a node declares (NodeHelpers.getNodeParameters, as the editor
+		// and every execution run it), so these two top-level values are never read again. The CHANGELOG
+		// and the README say so.
+		const http = new FakeHttp().answer(json(200, { data: { networks: [] } }));
+		await runItem(
+			itemContext(
+				{
+					resource: 'account',
+					operation: 'getPostingOptions',
+					profile: locator(accounts[0].profile_id),
+					platforms: ['tiktok'],
+					skoolGroupSlug: 'my-group',
+				},
+				http,
+			),
+			http,
+		);
+		expect(http.sent[0].qs).toEqual({});
 	});
 
 	it('401 unauthorized: says to check the credential', async () => {

@@ -298,8 +298,7 @@ describe('the other operations', () => {
 					resource: 'account',
 					operation: 'getPostingOptions',
 					profile: id,
-					platforms: ['tiktok', 'skool'],
-					skoolGroupSlug: 'grp',
+					options: { platforms: ['tiktok', 'skool'], skoolGroupSlug: ' grp ' },
 				}),
 				env,
 			),
@@ -307,6 +306,33 @@ describe('the other operations', () => {
 			url: `/accounts/${id}/options`,
 			qs: { platforms: 'tiktok,skool', skool_group_slug: 'grp' },
 		});
+	});
+
+	it('Get Posting Options: Options left out or empty asks for every connected network, no slug', () => {
+		for (const options of [undefined, {}, { platforms: [], skoolGroupSlug: '  ' }]) {
+			const req = buildRequest(
+				reader({ resource: 'account', operation: 'getPostingOptions', profile: id, options }),
+				env,
+			);
+			expect(req, JSON.stringify(options)).toMatchObject({
+				method: 'GET',
+				url: `/accounts/${id}/options`,
+				qs: {},
+				repeatable: true,
+			});
+		}
+		// An expression may give the networks as text.
+		expect(
+			buildRequest(
+				reader({
+					resource: 'account',
+					operation: 'getPostingOptions',
+					profile: id,
+					options: { platforms: 'x, linkedin' },
+				}),
+				env,
+			).qs,
+		).toEqual({ platforms: 'x,linkedin' });
 	});
 
 	it('Media: Import From URL (with its own key) and Get', () => {
