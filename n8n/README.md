@@ -48,7 +48,7 @@ with it can post as you: never put it in a workflow's fields or share it. More i
 | Post | Get Many | List your posts and scheduled posts, newest first, with filters |
 | Post | Cancel | Stop a scheduled or queued post that has not gone out |
 | Account | Get Many | Your profiles and their connected networks |
-| Account | Get Posting Options | What a profile may do on each network: TikTok privacy levels, Pinterest boards, Skool groups, the Instagram limit |
+| Account | Get Posting Options | What a profile may do on each network: TikTok privacy levels, Pinterest boards, Skool groups, the Instagram limit. Under **Options**: **Platforms** (only these networks; left out, every connected network) and **Skool Group Slug** (the group whose labels to read; with one group, its labels come anyway) |
 | Media | Import From URL | Import an image or a video from a public URL (or, where share links are on for your account, a Google Drive, Dropbox or OneDrive share link), and wait until it is ready |
 | Media | Get | Read how an import is going |
 
