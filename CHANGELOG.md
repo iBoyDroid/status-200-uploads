@@ -23,3 +23,5 @@ The first public version of the repository:
   maintainer's approval, with npm provenance and PyPI attestations ([RELEASING.md](RELEASING.md)).
 - `credentials/`: an exact copy of `n8n/credentials/` at the top of the repository, where n8n's
   Creator Portal looks for the node's credential; CI fails if the two differ. The n8n node 0.1.1.
+- The n8n node 0.1.2: Account: Get Posting Options takes Platforms and Skool Group Slug under
+  Options, as n8n's review asked ([n8n/CHANGELOG.md](n8n/CHANGELOG.md)).

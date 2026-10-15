@@ -234,6 +234,9 @@ are not tested. It has no runtime dependencies.
 
 See [CHANGELOG.md](CHANGELOG.md).
 
+- **0.1.2**: Account: Get Posting Options has Platforms and Skool Group Slug under **Options**, as
+  n8n's review asked. A Get Posting Options node saved with 0.1.1 that set either one loses it (it then
+  asks for every connected network): set it again under **Options** and save.
 - **0.1.1**: no change to the node; released so n8n's Creator Portal checks it again.
 - **0.1.0**: first release.
 

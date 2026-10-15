@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.2
+
+- **Account: Get Posting Options**: its two optional fields, **Platforms** and **Skool Group Slug**,
+  are now under **Options** (**Add Option**), like the optional fields of every other operation, as
+  n8n's review of the node asked. What the node sends does not change: left out, the answer covers
+  every connected network, with no Skool group slug.
+- **Check your Get Posting Options nodes after updating.** n8n keeps only the fields a node has, so a
+  node saved with 0.1.1 that set Platforms or Skool Group Slug loses those values. It does not fail:
+  it asks for every connected network, with no Skool group slug. Open the node, set them again under
+  **Options**, and save. Nodes that left both empty, and every other operation, work as before.
+- The User-Agent now says 0.1.2.
+
 ## 0.1.1
 
 No change to how the node works. The User-Agent now says 0.1.1.
