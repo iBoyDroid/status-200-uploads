@@ -15,6 +15,17 @@ describe('package.json', () => {
 		expect(USER_AGENT).toBe(`n8n-nodes-status200uploads/${String(pkg.version)}`);
 	});
 
+	it('package-lock.json, the CHANGELOG’s first section and the README’s version history say this version', () => {
+		const lock = JSON.parse(readPackageFile('package-lock.json')) as {
+			version: string;
+			packages: Record<string, { version?: string }>;
+		};
+		expect([lock.version, lock.packages['']?.version]).toEqual([pkg.version, pkg.version]);
+		expect(readPackageFile('CHANGELOG.md').match(/^## (\S+)$/m)?.[1]).toBe(pkg.version);
+		const history = readPackageFile('README.md').split(/^## Version history$/m)[1] ?? '';
+		expect(history.match(/^- \*\*([^*]+)\*\*:/m)?.[1]).toBe(pkg.version);
+	});
+
 	it('names the package, the author and the repository exactly as npm and n8n check them', () => {
 		expect(pkg.name).toBe('@status200uploads/n8n-nodes-status200uploads');
 		expect(pkg.license).toBe('MIT');
