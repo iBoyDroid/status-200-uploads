@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3
+
+No change to how the node works. The User-Agent now says 0.1.3.
+
+- The codex file (`nodes/Status200Uploads/Status200Uploads.node.json`) names the node the way n8n's
+  review asked: `@status200uploads/n8n-nodes-status200uploads.status200Uploads`, the package, a dot
+  and the node's name. Before, it named only the package.
+
 ## 0.1.2
 
 - **Account: Get Posting Options**: its two optional fields, **Platforms** and **Skool Group Slug**,

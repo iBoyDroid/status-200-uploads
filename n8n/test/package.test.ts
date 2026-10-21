@@ -63,11 +63,11 @@ describe('package.json', () => {
 		}
 	});
 
-	it('the codex file names this package', () => {
+	it('the codex file names this package’s node: the package, a dot and the node’s name (n8n’s review)', () => {
 		const codex = JSON.parse(
 			readPackageFile('nodes/Status200Uploads/Status200Uploads.node.json'),
 		) as { node: string; categories: string[] };
-		expect(codex.node).toBe(pkg.name);
+		expect(codex.node).toBe(`${String(pkg.name)}.status200Uploads`);
 		expect(codex.categories).toEqual(['Marketing & Content']);
 	});
 

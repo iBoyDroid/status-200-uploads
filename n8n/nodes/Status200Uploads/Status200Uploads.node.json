@@ -1,5 +1,5 @@
 {
-	"node": "@status200uploads/n8n-nodes-status200uploads",
+	"node": "@status200uploads/n8n-nodes-status200uploads.status200Uploads",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
 	"categories": ["Marketing & Content"],

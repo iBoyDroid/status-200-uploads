@@ -15,6 +15,8 @@ Since the first public version:
 
 - The n8n node 0.1.2: Account: Get Posting Options takes Platforms and Skool Group Slug under
   Options, as n8n's review asked ([n8n/CHANGELOG.md](n8n/CHANGELOG.md)).
+- The n8n node 0.1.3: its codex file names the node
+  (`@status200uploads/n8n-nodes-status200uploads.status200Uploads`), as n8n's review asked.
 
 The first public version of the repository:
 

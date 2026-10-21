@@ -234,6 +234,7 @@ are not tested. It has no runtime dependencies.
 
 See [CHANGELOG.md](CHANGELOG.md).
 
+- **0.1.3**: no change to the node; its codex file names the node the way n8n's review asked.
 - **0.1.2**: Account: Get Posting Options has Platforms and Skool Group Slug under **Options**, as
   n8n's review asked. A Get Posting Options node saved with 0.1.0 or 0.1.1 that set either one loses
   it (it then asks for every connected network, with no Skool group slug): set it again under
