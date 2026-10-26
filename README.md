@@ -6,7 +6,7 @@ open-source clients of that API.
 
 | Folder | What it is | Install |
 |---|---|---|
-| [`n8n/`](n8n) | The n8n community node **Status 200 Uploads**, verified by n8n | n8n Cloud: the nodes panel (**+**), search **Status 200 Uploads**, Install. Self-hosted n8n: Settings, Community Nodes, Install `@status200uploads/n8n-nodes-status200uploads` |
+| [`n8n/`](n8n) | The n8n community node **Status 200 Uploads**, verified by n8n on 26 October 2026 | n8n Cloud: the nodes panel (**+**), search **Status 200 Uploads**, Install. Self-hosted n8n: Settings, Community Nodes, Install `@status200uploads/n8n-nodes-status200uploads` |
 | [`python/`](python) | The Python package `status200uploads` | `pip install status200uploads` |
 | [`n8n/templates/`](n8n/templates) | Two n8n workflows to import: a cross-post to X, LinkedIn and Facebook, and a short video to TikTok, Instagram Reels and YouTube Shorts | n8n: Workflows, Import from File |
 | [`openapi/openapi.yaml`](openapi/openapi.yaml) | The OpenAPI 3.1 description of the API | Served at https://status200uploads.com/openapi.yaml |

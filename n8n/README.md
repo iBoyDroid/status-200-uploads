@@ -26,12 +26,14 @@ with your API key.
 In queue mode, install it with npm in `~/.n8n/nodes` instead
 ([manual installation](https://docs.n8n.io/integrations/community-nodes/installation-and-management/manual-installation)).
 
-**n8n Cloud:** the node is [verified by n8n](https://n8n.io/integrations/status-200-uploads/) and has
-been on n8n Cloud since 26 October 2026 (version 0.1.3). An owner or admin of the instance opens the
-nodes panel (**+**), searches for **Status 200 Uploads**, opens it and selects **Install**; every
-member can then use it. If it is not listed, turn on **Verified community nodes** in the n8n Cloud
-admin panel (Instance settings); n8n says the instance may need a restart. See n8n's
-[guide to verified community nodes](https://docs.n8n.io/integrations/community-nodes/installation-and-management/install-verified-community-nodes).
+**n8n Cloud:** the node is [verified by n8n](https://n8n.io/integrations/status-200-uploads/): n8n
+verified version 0.1.3 on 26 October 2026. An owner or admin of the instance opens the nodes panel
+(**+**), searches for **Status 200 Uploads**, opens it and selects **Install**; every member can then
+use it. If it is not listed, the instance owner turns on **Verified community nodes** under
+**Instance settings** in the n8n Cloud console (**Admin Panel** in n8n's left menu); n8n told us the
+instance may then need a restart (**Restart**, on the same page). See n8n's
+[guide to verified community nodes](https://docs.n8n.io/integrations/community-nodes/installation-and-management/install-verified-community-nodes)
+and its [Cloud console guide](https://docs.n8n.io/deploy/use-n8n-cloud/use-the-cloud-console).
 
 Without the node, n8n's HTTP Request node can call the API directly, on n8n Cloud or self-hosted n8n,
 as the [n8n guide](https://status200uploads.com/docs/api#guide-n8n) describes.
@@ -224,9 +226,10 @@ daily allowance is queued for the next day (`202 queued_for_next_day`).
 
 ## Compatibility
 
-For self-hosted n8n 2.x, and for n8n Cloud, where n8n has verified the node. Built with n8n's node CLI
-0.49.1 against n8n-workflow 2.40; older n8n versions are not tested. Our own live test of the node ran
-on self-hosted n8n 2.x, not on n8n Cloud. It has no runtime dependencies.
+For n8n 2.x, self-hosted or on n8n Cloud, where n8n verified the node on 26 October 2026. Built with
+n8n's node CLI 0.49.1 against n8n-workflow 2.40; older n8n versions are not tested. Our own live test
+of the node (version 0.1.0, on 29 September 2026) ran on self-hosted n8n 2.x, not on n8n Cloud. It has
+no runtime dependencies.
 
 ## Resources
 

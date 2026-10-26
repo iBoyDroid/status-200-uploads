@@ -85,6 +85,10 @@ by hand as below.
    **Review deployments**, tick **npm**, and **Approve and deploy**.
 5. The last job, **n8n security scan of the published version**, must turn green: it is the scan n8n's
    own review runs. The package page on npmjs.com shows the provenance badge.
+6. n8n's list of community nodes names the version n8n Cloud offers (`npmVersion`; 0.1.3 on
+   26 October 2026):
+   `https://api.n8n.io/api/community-nodes?filters[packageName][$eq]=@status200uploads/n8n-nodes-status200uploads`.
+   Check it before changing the version named under **n8n Cloud** in `n8n/README.md`.
 
 ### Right after the very first npm release
 

@@ -56,4 +56,11 @@ describe('README', () => {
 		expect(installation).toContain('**Self-hosted n8n:** open **Settings**, **Community Nodes**');
 		expect(readme).not.toMatch(/only after n8n has verified|until n8n verifies/i);
 	});
+
+	it('says our own live test ran on self-hosted n8n, and never that the node was tested on n8n Cloud', () => {
+		// n8n verified the node; our own live test (0.1.0, 29 September 2026) ran on self-hosted n8n.
+		const compatibility = readme.split(/^## /m).find((s) => s.startsWith('Compatibility\n')) ?? '';
+		expect(compatibility).toMatch(/live test[\s\S]*self-hosted n8n[\s\S]*not on n8n Cloud/);
+		expect(readme).not.toMatch(/tested on n8n Cloud/i);
+	});
 });
