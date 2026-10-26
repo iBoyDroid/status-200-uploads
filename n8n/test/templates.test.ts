@@ -143,6 +143,13 @@ describe('the templates', () => {
 		expect(FILES).toEqual([T1, T2]);
 	});
 
+	it('their README says how to add the node on n8n Cloud, where n8n has verified it, and self-hosted', () => {
+		const readme = readPackageFile('templates/README.md');
+		expect(readme).toMatch(/On n8n Cloud, where n8n has verified it, [\s\S]*nodes panel/);
+		expect(readme).toContain('On self-hosted n8n, open **Settings, Community Nodes, Install**');
+		expect(readme).not.toMatch(/until n8n verifies|self-hosted n8n only/i);
+	});
+
 	for (const file of FILES) {
 		describe(file, () => {
 			const t = load(file);
@@ -217,6 +224,9 @@ describe('the templates', () => {
 				expect(words(content)).toBeLessThanOrEqual(300);
 				expect(content).toContain('@status200uploads/n8n-nodes-status200uploads');
 				expect(content).toMatch(/self-hosted/);
+				// n8n has verified the node (on n8n Cloud since 26 October 2026): both ways to add it.
+				expect(content).toMatch(/on n8n Cloud from the nodes panel/);
+				expect(content).not.toMatch(/until n8n verifies|self-hosted n8n only/i);
 				const sections = stickies.filter((n) => n !== overview[0]);
 				expect(sections.length).toBeGreaterThan(0);
 				for (const note of sections) {

@@ -26,8 +26,15 @@ with your API key.
 In queue mode, install it with npm in `~/.n8n/nodes` instead
 ([manual installation](https://docs.n8n.io/integrations/community-nodes/installation-and-management/manual-installation)).
 
-**n8n Cloud:** community nodes appear there only after n8n has verified them. Until then, use the HTTP
-Request node as described in the [n8n guide](https://status200uploads.com/docs/api#guide-n8n).
+**n8n Cloud:** the node is [verified by n8n](https://n8n.io/integrations/status-200-uploads/) and has
+been on n8n Cloud since 26 October 2026 (version 0.1.3). An owner or admin of the instance opens the
+nodes panel (**+**), searches for **Status 200 Uploads**, opens it and selects **Install**; every
+member can then use it. If it is not listed, turn on **Verified community nodes** in the n8n Cloud
+admin panel (Instance settings); n8n says the instance may need a restart. See n8n's
+[guide to verified community nodes](https://docs.n8n.io/integrations/community-nodes/installation-and-management/install-verified-community-nodes).
+
+Without the node, n8n's HTTP Request node can call the API directly, on n8n Cloud or self-hosted n8n,
+as the [n8n guide](https://status200uploads.com/docs/api#guide-n8n) describes.
 
 ## Credentials
 
@@ -217,8 +224,9 @@ daily allowance is queued for the next day (`202 queued_for_next_day`).
 
 ## Compatibility
 
-For self-hosted n8n 2.x. Built with n8n's node CLI 0.49.1 against n8n-workflow 2.40; older n8n versions
-are not tested. It has no runtime dependencies.
+For self-hosted n8n 2.x, and for n8n Cloud, where n8n has verified the node. Built with n8n's node CLI
+0.49.1 against n8n-workflow 2.40; older n8n versions are not tested. Our own live test of the node ran
+on self-hosted n8n 2.x, not on n8n Cloud. It has no runtime dependencies.
 
 ## Resources
 

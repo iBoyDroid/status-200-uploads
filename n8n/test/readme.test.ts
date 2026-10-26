@@ -49,4 +49,11 @@ describe('README', () => {
 		expect(readme).toContain('@status200uploads/n8n-nodes-status200uploads');
 		expect(readme).not.toMatch(/rl_[0-9a-f]{8,}/);
 	});
+
+	it('says how to add the node on n8n Cloud, where n8n has verified it, and on self-hosted n8n', () => {
+		const installation = readme.split(/^## /m).find((s) => s.startsWith('Installation\n')) ?? '';
+		expect(installation).toMatch(/\*\*n8n Cloud:\*\*[\s\S]*verified by n8n[\s\S]*nodes panel/);
+		expect(installation).toContain('**Self-hosted n8n:** open **Settings**, **Community Nodes**');
+		expect(readme).not.toMatch(/only after n8n has verified|until n8n verifies/i);
+	});
 });

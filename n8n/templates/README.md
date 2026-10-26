@@ -10,9 +10,11 @@ package: import them into your own n8n.
 
 ## Before you import
 
-1. Install the community node: in n8n, **Settings, Community Nodes, Install**, and enter
-   `@status200uploads/n8n-nodes-status200uploads`. Until n8n verifies the node, this works on
-   self-hosted n8n only.
+1. Add the community node. On n8n Cloud, where n8n has verified it, an owner or admin opens the
+   nodes panel (**+**), searches for **Status 200 Uploads** and selects **Install**. If it is not
+   listed, turn on **Verified community nodes** in the n8n Cloud admin panel (n8n says the instance
+   may need a restart). On self-hosted n8n, open **Settings, Community Nodes, Install**, and enter
+   `@status200uploads/n8n-nodes-status200uploads`.
 2. In your [Status 200 Uploads](https://status200uploads.com) dashboard, connect the networks the
    template posts to, and create an API key on the **API** page.
 
