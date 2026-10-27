@@ -16,7 +16,9 @@ class AccountNetwork:
     Attributes:
         platform (str):
         username (None | str):
-        status (str): The connection's own status.
+        status (str): The connection's own status. expired: the saved sign-in has expired or stopped working (for
+            Instagram, Facebook and Threads also when Meta refused it on a post, a read or a renewal and again on our own
+            check); reconnect it on the Connections page.
         health (str): ready = it can post now (a sign-in the network renews by itself on the next post included);
             reconnect_required = reconnect it on the Connections page.
         access_expires_at (datetime.datetime | None):

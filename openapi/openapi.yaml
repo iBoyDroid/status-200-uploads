@@ -166,7 +166,8 @@ paths:
             address (a value of post.content.mediaUrls, or a Reel's post.instagram.coverUrl, that a URL
             parser does not read as an http:// or https:// address) is bad_request with error.field
             naming it, and no post is recorded. Every item of content.mediaUrls is checked, even one the
-            network would not use.
+            network would not use. api_error for a network that is not connected (an Instagram, Facebook or Threads
+            connection with status expired is the 401 below).
           x-error-codes: [bad_request, api_error, scheduled_for_invalid, youtube_tags_too_long, idempotency_key_invalid, profile_name_ambiguous, pinterest_board_required, media_wrong_for_post_type, options_outside_post, media_not_available, video_size_unknown, no_container, no_publish_id, pinterest_sandbox_board, pinterest_rejected, x_rejected, skool_rejected, category_required]
           content:
             application/json:
@@ -176,9 +177,13 @@ paths:
           description: >-
             unauthorized: no key, or a key that is not active. A network that no longer accepts the
             profile's sign-in answers 401 with its own code: reconnect_required (Facebook, LinkedIn,
-            Skool), RECONNECT_REQUIRED (Instagram), REFRESH_TOKEN_EXPIRED (TikTok), NO_TOKEN (Instagram,
+            Skool, Threads), RECONNECT_REQUIRED (Instagram), REFRESH_TOKEN_EXPIRED (TikTok), NO_TOKEN (Instagram,
             TikTok), pinterest_auth_failed, x_rejected: reconnect it on the Connections page.
-            TOKEN_REFRESH_FAILED (Instagram, TikTok): the sign-in could not be renewed just now; try again
+            An Instagram, Facebook or Threads connection with status expired (health reconnect_required in GET
+            /api/v2/accounts) is refused this way before anything is sent, with error.platform and a message that
+            says to reconnect it; a Meta connection also turns expired when Meta refuses its sign-in on a post, a
+            read or a renewal and again on our own check, and the message then says why.
+            TOKEN_REFRESH_FAILED (Instagram, TikTok, Threads): the sign-in could not be renewed just now; try again
             later, and reconnect the network if it keeps failing.
           x-error-codes: [unauthorized, reconnect_required, RECONNECT_REQUIRED, REFRESH_TOKEN_EXPIRED, NO_TOKEN, TOKEN_REFRESH_FAILED, pinterest_auth_failed, x_rejected]
           content:
@@ -1442,7 +1447,8 @@ paths:
         '400':
           description: >-
             The request cannot be sent as it is. Nothing was sent. A media address that is not a web
-            address is bad_request with error.field here too, as on /api/v2/posts.
+            address is bad_request with error.field here too, as on /api/v2/posts. api_error for a network that is
+            not connected (an Instagram, Facebook or Threads connection with status expired is the 401 below).
           x-error-codes: [api_error, bad_request, scheduled_for_invalid, youtube_tags_too_long, idempotency_key_invalid, profile_name_ambiguous, pinterest_board_required, media_wrong_for_post_type, options_outside_post, media_not_available, video_size_unknown, no_container, no_publish_id, pinterest_sandbox_board, pinterest_rejected, x_rejected, skool_rejected, category_required]
           content:
             application/json:
@@ -1452,6 +1458,10 @@ paths:
           description: >-
             api_error: "Missing Authorization: Bearer <api_key>" or "Invalid or inactive API key"; or a
             network sign-in it no longer accepts, with the same codes as on /api/v2/posts.
+            An Instagram, Facebook or Threads connection with status expired (health reconnect_required in GET
+            /api/v2/accounts) is refused this way before anything is sent, with error.platform and a message that
+            says to reconnect it; a Meta connection also turns expired when Meta refuses its sign-in on a post, a
+            read or a renewal and again on our own check, and the message then says why.
           x-error-codes: [api_error, reconnect_required, RECONNECT_REQUIRED, REFRESH_TOKEN_EXPIRED, NO_TOKEN, TOKEN_REFRESH_FAILED, pinterest_auth_failed, x_rejected]
           content:
             application/json:
@@ -3233,7 +3243,10 @@ components:
         status:
           type: string
           x-known-values: [connected, expired]
-          description: The connection's own status.
+          description: >-
+            The connection's own status. expired: the saved sign-in has expired or stopped working (for Instagram,
+            Facebook and Threads also when Meta refused it on a post, a read or a renewal and again on our own
+            check); reconnect it on the Connections page.
         health:
           type: string
           x-known-values: [ready, reconnect_required, unknown]
