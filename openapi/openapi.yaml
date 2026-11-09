@@ -183,8 +183,11 @@ paths:
             /api/v2/accounts) is refused this way before anything is sent, with error.platform and a message that
             says to reconnect it; a Meta connection also turns expired when Meta refuses its sign-in on a post, a
             read or a renewal and again on our own check, and the message then says why.
-            TOKEN_REFRESH_FAILED (Instagram, TikTok, Threads): the sign-in could not be renewed just now; try again
-            later, and reconnect the network if it keeps failing.
+            TOKEN_REFRESH_FAILED (Instagram, TikTok, Threads): on Instagram and Threads the sign-in could not be
+            renewed just now; try again later, and reconnect the network if it keeps failing.
+            On TikTok it means TikTok refused the saved sign-in: reconnect TikTok on the Connections page before
+            sending the post again (a TikTok sign-in that could not be renewed just now is the 503
+            TOKEN_REFRESH_FAILED).
           x-error-codes: [unauthorized, reconnect_required, RECONNECT_REQUIRED, REFRESH_TOKEN_EXPIRED, NO_TOKEN, TOKEN_REFRESH_FAILED, pinterest_auth_failed, x_rejected]
           content:
             application/json:
@@ -1533,8 +1536,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/OlderErrorResponse'
         '503':
-          description: Nothing was posted; send it again after Retry-After when it is sent (5 seconds).
-          x-error-codes: [caller_check_unavailable, schedule_check_unavailable, idempotency_unavailable, skool_unavailable, x_unavailable]
+          description: >-
+            Nothing was posted; send it again after Retry-After when it is sent (5 seconds).
+            TOKEN_REFRESH_FAILED (TikTok): the sign-in could not be renewed just now, as on /api/v2/posts;
+            wait a few minutes, then send it again.
+          x-error-codes: [caller_check_unavailable, schedule_check_unavailable, idempotency_unavailable, skool_unavailable, x_unavailable, TOKEN_REFRESH_FAILED]
           headers:
             Retry-After:
               $ref: '#/components/headers/RetryAfter'
@@ -2211,8 +2217,10 @@ components:
         Nothing was posted. caller_check_unavailable, schedule_check_unavailable,
         idempotency_unavailable and dry_run_unavailable carry Retry-After 5 and retry_after_seconds 5:
         send the same request again then. skool_unavailable, x_unavailable: the network is not taking
-        posts from us right now; try again later.
-      x-error-codes: [caller_check_unavailable, schedule_check_unavailable, idempotency_unavailable, dry_run_unavailable, skool_unavailable, x_unavailable]
+        posts from us right now; try again later. TOKEN_REFRESH_FAILED (TikTok): the TikTok sign-in could
+        not be renewed just now (another request was renewing it, TikTok did not answer the renewal
+        properly, or the fault was ours); wait a few minutes, then send the same request again.
+      x-error-codes: [caller_check_unavailable, schedule_check_unavailable, idempotency_unavailable, dry_run_unavailable, skool_unavailable, x_unavailable, TOKEN_REFRESH_FAILED]
       headers:
         Retry-After:
           $ref: '#/components/headers/RetryAfter'

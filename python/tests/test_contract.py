@@ -108,7 +108,14 @@ class TestRetryTable:
         cancel = v2_operations(spec)[("DELETE", "/posts/{id}")]["op"]
         documented |= set(cancel["responses"]["502"]["x-error-codes"])  # upstream_unavailable
         documented |= set(cancel["responses"]["504"]["x-error-codes"])  # cancel_unconfirmed
-        assert UNAVAILABLE_CODES == documented
+        # A code the file's retry table does not name is read by its status class. TOKEN_REFRESH_FAILED
+        # comes as a 503 (the sign-in could not be renewed just now) and as a 401 (reconnect), so it
+        # has no rule of its own: by code it would send a 401 again.
+        by_code = spec["components"]["x-status200-retry"]["by_code"]
+        assert documented - set(by_code) == {"TOKEN_REFRESH_FAILED"}
+        assert UNAVAILABLE_CODES == documented & set(by_code)
+        assert retry_rule(503, "TOKEN_REFRESH_FAILED") == "resend_once_with_key"
+        assert retry_rule(401, "TOKEN_REFRESH_FAILED") == "never"
 
     def test_every_code_in_the_table_is_one_the_main_address_answers(self, spec) -> None:
         answered = set(schema(spec, "Accepted")["properties"]["code"]["x-known-values"])
