@@ -25,7 +25,9 @@ class PostItem:
         kind (PostItemKind):
         profile_id (None | str):
         platform (str):
-        status (str): timeout = sent, never confirmed; do not send it again.
+        status (str): timeout = sent, not confirmed (error_message says why); do not send it again. An Instagram timeout
+            whose error_message starts "Instagram published this post." is live: it becomes success, and the link is added
+            when Instagram gives it (never for a Story).
         done (bool): True once it will not change by itself.
         media_type (None | str):
         publish_id (None | str): The network's own id.

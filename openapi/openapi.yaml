@@ -1432,8 +1432,9 @@ paths:
         can be missing; media still importing is waited for up to 90 seconds (the request can stay open
         about two minutes) and its 409 names GET /api-media-upload?file_id=; the answer is not bounded
         by 25 seconds, so there is no still_publishing from a timeout of ours and no 502
-        upstream_unavailable, 503 dry_run_unavailable or 202 schedule_unconfirmed. It shares
-        Idempotency-Keys with /api/v2/posts.
+        upstream_unavailable, 503 dry_run_unavailable or 202 schedule_unconfirmed. A Facebook post
+        whose answer was lost, or that Facebook answered without its id, is 202 still_publishing here
+        too. It shares Idempotency-Keys with /api/v2/posts.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -2126,10 +2127,13 @@ components:
                     status: ok
     Accepted:
       description: >-
-        Accepted, not published yet, and never a failure: do not send the request again (with the
+        Accepted, not confirmed yet, and never a failure: do not send the request again (with the
         same Idempotency-Key it only gets this answer back). If code is present, switch on code
         (scheduled, queued_for_next_day, still_publishing, schedule_unconfirmed); otherwise data.status
         is "processing" (every YouTube upload, large videos on X, LinkedIn, Facebook and Skool).
+        still_publishing also answers a Facebook post that Facebook accepted without sending back its
+        id, or answered with a status that is neither a confirmation nor a refusal: it may already be
+        live; do not send it again; History shows what our check finds.
       headers:
         Idempotent-Replayed:
           $ref: '#/components/headers/IdempotentReplayed'
@@ -2185,6 +2189,19 @@ components:
                   post_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
                   scheduled_post_id: null
                   status_url: https://status200uploads.com/api/v2/posts/b2c3d4e5-f6a7-8901-bcde-f12345678901
+            noId:
+              summary: Facebook accepted the post without sending back its id
+              value:
+                success: false
+                status: unknown
+                code: still_publishing
+                retry: false
+                message: 'Facebook accepted this post but did not send back its id, so it is not confirmed and may already be live. Do not send this request again: we check Facebook for it, and the post history shows what we find.'
+                post_id: e5f6a7b8-c9d0-1234-ef01-345678901234
+                status200:
+                  post_id: e5f6a7b8-c9d0-1234-ef01-345678901234
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/e5f6a7b8-c9d0-1234-ef01-345678901234
             processing:
               summary: A YouTube upload (always in the background)
               value:
@@ -3474,7 +3491,10 @@ components:
         status:
           type: string
           x-known-values: [success, failed, processing, timeout]
-          description: timeout = sent, never confirmed; do not send it again.
+          description: >-
+            timeout = sent, not confirmed (error_message says why); do not send it again. An Instagram
+            timeout whose error_message starts "Instagram published this post." is live: it becomes
+            success, and the link is added when Instagram gives it (never for a Story).
         done:
           type: boolean
           description: True once it will not change by itself.
