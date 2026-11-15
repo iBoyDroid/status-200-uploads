@@ -105,7 +105,8 @@ and sends nothing; the output is a report (`dry_run: true`, `outcome`, `reason`,
 **What comes out.** Post: Create outputs the API's answer. `status200.post_id` and
 `status200.status_url` name the post in your History (use them with Post: Get). TikTok and Instagram
 finish after the answer (`data.status: "processing"`); YouTube uploads and large videos answer `202`;
-a network slower than the request answers `202` with `code: "still_publishing"`. None of these is a
+a network slower than the request, or a Facebook post that Facebook accepted without sending back its
+id (it may already be live), answers `202` with `code: "still_publishing"`. None of these is a
 failure, and the node never sends them again. When the answer is the stored first answer of the same
 request (see [Safe retries](#safe-retries)), the output carries `replayed: true`.
 
@@ -212,7 +213,7 @@ The node follows the API's retry table (`components.x-status200-retry` in the Op
 | An answer whose outcome may not be known: a `5xx` such as `server_error`, `platform_error` or `upload_worker_failed`, `no_publish_id`, or a page that is not JSON | Sends it once more only when the request carried an Idempotency-Key (a read, a cancel or a dry run always); otherwise stops and asks you to look in History first |
 | No answer at all (the connection broke or timed out) to the node's first request | Stops with n8n's own connection message. With **Retry On Fail** on, n8n runs the node again with the same automatic key, which gets the first answer back if the post went through. Without it, look in History before running it again |
 | No answer at all to a request the node sends itself (a resend, the next page, an import status read) | Treated like a page that is not JSON: sent once more only with an Idempotency-Key (a read always) |
-| Any `202` | A success: never sent again |
+| Any `202` | Not a failure: never sent again |
 | Every other refusal (a used-up allowance, a missing field, a key used for another request) | Stops at once with the message and the fix |
 
 Turn **Options, Wait When Asked** off to stop instead of waiting. Waiting counts toward n8n's execution

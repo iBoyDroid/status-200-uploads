@@ -135,8 +135,8 @@ A `Result` for every answer that is a success:
 
 | | |
 |---|---|
-| `result.status_code` | `200`: published (or a dry run's report). `202`: accepted, not published yet |
-| `result.code` | the `202`'s case: `scheduled`, `queued_for_next_day` (daily allowance used up), `still_publishing` (the network is slower than the request), or `None` while `data.status` is `processing` |
+| `result.status_code` | `200`: published (or a dry run's report). `202`: accepted, not confirmed yet (a `still_publishing` Facebook post may already be live) |
+| `result.code` | the `202`'s case: `scheduled`, `queued_for_next_day` (daily allowance used up), `still_publishing` (the network is slower than the request, or Facebook accepted the post without sending back its id), or `None` while `data.status` is `processing` |
 | `result.status200` | our ids: `post_id`, `scheduled_post_id` and `status_url` (read it with `get_post()` or `wait_for()`) |
 | `result.data` | the network's own answer (its fields differ per network) |
 | `result.warnings` | fields that were not used, and other things to know |
@@ -144,7 +144,8 @@ A `Result` for every answer that is a success:
 | `result.idempotency_key` | the key the post was sent with |
 | `result.raw` | the whole JSON answer |
 
-A `202` is never a failure: the post is on its way, scheduled or queued, and it must not be sent again.
+A `202` is never a failure: the post is on its way, scheduled or queued, or (`still_publishing`)
+possibly already live, and it must not be sent again.
 TikTok and Instagram finish after the answer (`data.status: "processing"`); `wait_for(result)` follows
 them to the end.
 
@@ -198,7 +199,7 @@ The client follows the API's retry table (`components.x-status200-retry` in the
 | `409 media_processing` (a file still importing), `409 idempotency_in_progress`, `429 rate_limited` | Waits as long as the API asks (`Retry-After`), then sends the identical request again, within `max_wait` |
 | `503` "nothing was sent" answers, `502 upstream_unavailable`, `504 cancel_unconfirmed` | Waits and sends again, at most twice |
 | An answer whose outcome may not be known: a `5xx` such as `server_error` or `platform_error`, a page that is not JSON, or no answer at all | Sends it once more, and only with an `Idempotency-Key` (a read, a cancel or a dry run always); otherwise raises `OutcomeUnknown` |
-| Any `202` | A success: never sent again |
+| Any `202` | Not a failure: never sent again |
 | Every other refusal | Raises `Status200Error` at once |
 
 `Status200(max_wait=120, max_tries=5, timeout=httpx.Timeout(120, connect=10))` are the defaults:
