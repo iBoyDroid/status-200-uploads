@@ -265,8 +265,11 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '502':
           description: >-
-            upstream_unavailable: the request never left, nothing was posted. upload_worker_failed: our
-            upload of a TikTok video stopped. platform_error: a gateway's 502 without a code of its own.
+            upstream_unavailable: the request never left, nothing was posted. upload_worker_failed: on X
+            and LinkedIn, our upload of a file to the network did not finish, so the post was not sent:
+            nothing was posted, the message names the file, and it is safe to send it again. On TikTok,
+            our upload of a video stopped before TikTok confirmed it. platform_error: a gateway's 502
+            without a code of its own.
           x-error-codes: [upstream_unavailable, upload_worker_failed, platform_error]
           headers:
             Idempotent-Replayed:
@@ -1527,7 +1530,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/OlderErrorResponse'
         '502':
-          description: upload_worker_failed (our upload of a TikTok video stopped), or a gateway's own 502.
+          description: >-
+            upload_worker_failed: on X and LinkedIn, our upload of a file to the network did not finish,
+            so the post was not sent: nothing was posted, the message names the file, and it is safe to
+            send it again. On TikTok, our upload of a video stopped before TikTok confirmed it. Or a
+            gateway's own 502.
           x-error-codes: [upload_worker_failed]
           headers:
             Idempotent-Replayed:
@@ -3116,6 +3123,9 @@ components:
             media_not_available for a cover that is gone).
         upstream_status:
           type: integer
+          description: >-
+            upload_worker_failed: the HTTP status of our upload step. TikTok's always carries it; on X and
+            LinkedIn it is left out when no answer came back from that step.
         attempts:
           type: integer
         ceiling:
@@ -3156,7 +3166,6 @@ components:
         schedule_check_unavailable: [retry_after_seconds]
         dry_run_unavailable: [retry_after_seconds]
         cancel_unconfirmed: [retry_after_seconds]
-        upload_worker_failed: [upstream_status]
       description: >-
         REST refusals carry code, message and, for a plan refusal, upgrade_url, plus the facts of the
         refusal below. They carry no next_step and no retry field (those are the AI connector's); what

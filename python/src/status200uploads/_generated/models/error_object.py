@@ -55,7 +55,8 @@ class ErrorObject:
             field (str | Unset): Where the refused value sits in the request, for example post.content.mediaUrls[0] or
                 post.instagram.coverUrl (bad_request for a media address that is not a web address, media_not_available for a
                 cover that is gone).
-            upstream_status (int | Unset):
+            upstream_status (int | Unset): upload_worker_failed: the HTTP status of our upload step. TikTok's always carries
+                it; on X and LinkedIn it is left out when no answer came back from that step.
             attempts (int | Unset):
             ceiling (int | Unset):
             detected_links (list[str] | Unset):
