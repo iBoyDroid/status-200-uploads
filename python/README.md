@@ -109,8 +109,9 @@ Every field is in the [OpenAPI file](https://status200uploads.com/openapi.yaml)
 (`components.schemas.Post`) and the [API docs](https://status200uploads.com/docs/api). A field the API
 does not use never refuses a post: it comes back in `result.warnings`.
 
-**Check a post first.** `s200.validate(post)` runs every check a publish makes and sends nothing. The
-report says `outcome` (publish, schedule, queue or refuse), `would_publish`, `reason` and each check.
+**Check a post first.** `s200.validate(post)` runs every check a publish makes and sends nothing (a
+Skool post's files are read only when it is sent). The report says `outcome` (publish, schedule, queue
+or refuse), `would_publish`, `reason` and each check.
 
 ## Scheduling
 
@@ -135,8 +136,8 @@ A `Result` for every answer that is a success:
 
 | | |
 |---|---|
-| `result.status_code` | `200`: published (or a dry run's report). `202`: accepted, not confirmed yet (a `still_publishing` Facebook post may already be live) |
-| `result.code` | the `202`'s case: `scheduled`, `queued_for_next_day` (daily allowance used up), `still_publishing` (the network is slower than the request, or Facebook accepted the post without sending back its id), or `None` while `data.status` is `processing` |
+| `result.status_code` | `200`: published (or a dry run's report). `202`: accepted, not confirmed yet (a `still_publishing` Facebook post may already be live; a Skool one may be live, and Skool cannot be checked from here, so look at the group before sending it again) |
+| `result.code` | the `202`'s case: `scheduled`, `queued_for_next_day` (daily allowance used up), `still_publishing` (the network is slower than the request, or Facebook accepted the post without sending back its id; on Skool also when Skool accepted the post without sending back its id, answered it with a Skool server error (5xx) or a redirect that is not its sign-in page, or our call to Skool got no answer), or `None` while `data.status` is `processing` |
 | `result.status200` | our ids: `post_id`, `scheduled_post_id` and `status_url` (read it with `get_post()` or `wait_for()`) |
 | `result.data` | the network's own answer (its fields differ per network) |
 | `result.warnings` | fields that were not used, and other things to know |

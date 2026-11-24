@@ -100,13 +100,17 @@ date and time without a time zone (what the date picker stores) is read in the w
 which Post: Cancel stops.
 
 **Checking a post.** With **Options, Check Only (Dry Run)** on, the API runs every check a publish makes
-and sends nothing; the output is a report (`dry_run: true`, `outcome`, `reason`, `checks`).
+and sends nothing (a Skool post's files are read only when it is sent); the output is a report
+(`dry_run: true`, `outcome`, `reason`, `checks`).
 
 **What comes out.** Post: Create outputs the API's answer. `status200.post_id` and
 `status200.status_url` name the post in your History (use them with Post: Get). TikTok and Instagram
 finish after the answer (`data.status: "processing"`); YouTube uploads and large videos answer `202`;
 a network slower than the request, or a Facebook post that Facebook accepted without sending back its
-id (it may already be live), answers `202` with `code: "still_publishing"`. None of these is a
+id (it may already be live), answers `202` with `code: "still_publishing"`. So does a Skool post when
+Skool accepted it without sending back its id, answered it with a Skool server error (5xx) or a
+redirect that is not its sign-in page, or our call to Skool got no answer: it may be live, and Skool
+cannot be checked from here, so look at the group before sending it again. None of these is a
 failure, and the node never sends them again. When the answer is the stored first answer of the same
 request (see [Safe retries](#safe-retries)), the output carries `replayed: true`.
 
@@ -210,7 +214,7 @@ The node follows the API's retry table (`components.x-status200-retry` in the Op
 |---|---|
 | `409 media_processing` (a file still importing), `409 idempotency_in_progress`, `429 rate_limited` | Waits as long as the API asks (`Retry-After`), then sends the identical request again, within **Max Wait** (120 seconds by default, up to 600; for Media: Import From URL it also covers the wait until the file is ready) |
 | `503` "nothing was sent" answers, `502 upstream_unavailable`, `504 cancel_unconfirmed` | Waits and sends again, at most twice |
-| An answer whose outcome may not be known: a `5xx` such as `server_error`, `platform_error` or `upload_worker_failed` (on X and LinkedIn its message says nothing was posted; the node still treats it as an outcome that may not be known), `no_publish_id`, or a page that is not JSON | Sends it once more only when the request carried an Idempotency-Key (a read, a cancel or a dry run always); otherwise stops and asks you to look in History first |
+| An answer whose outcome may not be known: a `5xx` such as `server_error`, `platform_error` or `upload_worker_failed` (on X, LinkedIn and Skool its message says nothing was posted; the node still treats it as an outcome that may not be known), `no_publish_id`, or a page that is not JSON | Sends it once more only when the request carried an Idempotency-Key (a read, a cancel or a dry run always); otherwise stops and asks you to look in History first |
 | No answer at all (the connection broke or timed out) to the node's first request | Stops with n8n's own connection message. With **Retry On Fail** on, n8n runs the node again with the same automatic key, which gets the first answer back if the post went through. Without it, look in History before running it again |
 | No answer at all to a request the node sends itself (a resend, the next page, an import status read) | Treated like a page that is not JSON: sent once more only with an Idempotency-Key (a read always) |
 | Any `202` | Not a failure: never sent again |
