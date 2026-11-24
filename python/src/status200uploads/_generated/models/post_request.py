@@ -24,10 +24,11 @@ class PostRequest:
             warnings). Per network: Pinterest needs pinterest.boardId (400 pinterest_board_required); Skool needs
             skool.group and skool.title; media is required except for text posts on X, LinkedIn, Threads, Skool and Facebook
             (400 otherwise). dryRun may also be sent inside post (and as dry_run).
-        dry_run (bool | Unset): true: check this post and send nothing (every check a publish makes; the answer is 200
-            with dry_run true, and it is not counted in the key's request count). false or absent: publish. Also read as
-            dry_run, and inside post; a dry run may send the post as validate instead of post. Any value but true or false
-            (or true in one place and false in another) is 400 and nothing is published.
+        dry_run (bool | Unset): true: check this post and send nothing (every check a publish makes; a Skool post's
+            files are read only when it is sent; the answer is 200 with dry_run true, and it is not counted in the key's
+            request count). false or absent: publish. Also read as dry_run, and inside post; a dry run may send the post as
+            validate instead of post. Any value but true or false (or true in one place and false in another) is 400 and
+            nothing is published.
     """
 
     post: Post

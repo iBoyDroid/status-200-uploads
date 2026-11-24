@@ -144,8 +144,8 @@ def sync_detailed(
 
      One post to one network. Without post.scheduledFor (or with a time within 60 seconds) it is
     published now; more than 60 seconds ahead (up to 365 days) it is scheduled and the answer is 202
-    with code "scheduled". With dryRun true every check a publish makes is run and nothing is sent: the
-    answer is 200 with dry_run true.
+    with code "scheduled". With dryRun true every check a publish makes is run and nothing is sent (a
+    Skool post's files are read only when it is sent): the answer is 200 with dry_run true.
 
     Order of checks on this address: method, JSON, key, dryRun flag (a dry run is forwarded here), post,
     platform, YouTube tags, scheduledFor, Idempotency-Key, accountId, profile (403 or 400), media ids
@@ -196,8 +196,8 @@ def sync(
 
      One post to one network. Without post.scheduledFor (or with a time within 60 seconds) it is
     published now; more than 60 seconds ahead (up to 365 days) it is scheduled and the answer is 202
-    with code "scheduled". With dryRun true every check a publish makes is run and nothing is sent: the
-    answer is 200 with dry_run true.
+    with code "scheduled". With dryRun true every check a publish makes is run and nothing is sent (a
+    Skool post's files are read only when it is sent): the answer is 200 with dry_run true.
 
     Order of checks on this address: method, JSON, key, dryRun flag (a dry run is forwarded here), post,
     platform, YouTube tags, scheduledFor, Idempotency-Key, accountId, profile (403 or 400), media ids
@@ -243,8 +243,8 @@ async def asyncio_detailed(
 
      One post to one network. Without post.scheduledFor (or with a time within 60 seconds) it is
     published now; more than 60 seconds ahead (up to 365 days) it is scheduled and the answer is 202
-    with code "scheduled". With dryRun true every check a publish makes is run and nothing is sent: the
-    answer is 200 with dry_run true.
+    with code "scheduled". With dryRun true every check a publish makes is run and nothing is sent (a
+    Skool post's files are read only when it is sent): the answer is 200 with dry_run true.
 
     Order of checks on this address: method, JSON, key, dryRun flag (a dry run is forwarded here), post,
     platform, YouTube tags, scheduledFor, Idempotency-Key, accountId, profile (403 or 400), media ids
@@ -293,8 +293,8 @@ async def asyncio(
 
      One post to one network. Without post.scheduledFor (or with a time within 60 seconds) it is
     published now; more than 60 seconds ahead (up to 365 days) it is scheduled and the answer is 202
-    with code "scheduled". With dryRun true every check a publish makes is run and nothing is sent: the
-    answer is 200 with dry_run true.
+    with code "scheduled". With dryRun true every check a publish makes is run and nothing is sent (a
+    Skool post's files are read only when it is sent): the answer is 200 with dry_run true.
 
     Order of checks on this address: method, JSON, key, dryRun flag (a dry run is forwarded here), post,
     platform, YouTube tags, scheduledFor, Idempotency-Key, accountId, profile (403 or 400), media ids

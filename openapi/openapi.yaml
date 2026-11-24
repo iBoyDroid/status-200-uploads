@@ -83,7 +83,7 @@ paths:
         One post to one network. Without post.scheduledFor (or with a time within 60 seconds) it is
         published now; more than 60 seconds ahead (up to 365 days) it is scheduled and the answer is
         202 with code "scheduled". With dryRun true every check a publish makes is run and nothing is
-        sent: the answer is 200 with dry_run true.
+        sent (a Skool post's files are read only when it is sent): the answer is 200 with dry_run true.
 
 
         Order of checks on this address: method, JSON, key, dryRun flag
@@ -167,7 +167,11 @@ paths:
             parser does not read as an http:// or https:// address) is bad_request with error.field
             naming it, and no post is recorded. Every item of content.mediaUrls is checked, even one the
             network would not use. api_error for a network that is not connected (an Instagram, Facebook or Threads
-            connection with status expired is the 401 below).
+            connection with status expired is the 401 below). Skool: a file that cannot be used is
+            bad_request (not in our file storage, not found at its address, refused by its host, at an
+            address that cannot be fetched because it redirects more than 5 times or is not a public web
+            address, not an image or a video, or empty), and Skool's own refusal of a file is
+            skool_rejected; nothing was posted and the message names the file.
           x-error-codes: [bad_request, api_error, scheduled_for_invalid, youtube_tags_too_long, idempotency_key_invalid, profile_name_ambiguous, pinterest_board_required, media_wrong_for_post_type, options_outside_post, media_not_available, video_size_unknown, no_container, no_publish_id, pinterest_sandbox_board, pinterest_rejected, x_rejected, skool_rejected, category_required]
           content:
             application/json:
@@ -188,6 +192,7 @@ paths:
             On TikTok it means TikTok refused the saved sign-in: reconnect TikTok on the Connections page before
             sending the post again (a TikTok sign-in that could not be renewed just now is the 503
             TOKEN_REFRESH_FAILED).
+            Skool's reconnect_required also comes when Skool answers with its sign-in page.
           x-error-codes: [unauthorized, reconnect_required, RECONNECT_REQUIRED, REFRESH_TOKEN_EXPIRED, NO_TOKEN, TOKEN_REFRESH_FAILED, pinterest_auth_failed, x_rejected]
           content:
             application/json:
@@ -268,8 +273,10 @@ paths:
             upstream_unavailable: the request never left, nothing was posted. upload_worker_failed: on X
             and LinkedIn, our upload of a file to the network did not finish, so the post was not sent:
             nothing was posted, the message names the file, and it is safe to send it again. On TikTok,
-            our upload of a video stopped before TikTok confirmed it. platform_error: a gateway's 502
-            without a code of its own.
+            our upload of a video stopped before TikTok confirmed it. On Skool, upload_worker_failed: our
+            upload of a file did not finish, or its host or our file storage could not send it just now,
+            or its host name could not be found just now: nothing was posted, the message names the file,
+            and it is safe to send it again. platform_error: a gateway's 502 without a code of its own.
           x-error-codes: [upstream_unavailable, upload_worker_failed, platform_error]
           headers:
             Idempotent-Replayed:
@@ -1437,7 +1444,9 @@ paths:
         by 25 seconds, so there is no still_publishing from a timeout of ours and no 502
         upstream_unavailable, 503 dry_run_unavailable or 202 schedule_unconfirmed. A Facebook post
         whose answer was lost, or that Facebook answered without its id, is 202 still_publishing here
-        too. It shares Idempotency-Keys with /api/v2/posts.
+        too. A Skool post that Skool accepted without its id or answered with a Skool server error
+        (5xx), or whose call to Skool got no answer, is 202 still_publishing here too. It shares
+        Idempotency-Keys with /api/v2/posts.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -1456,6 +1465,10 @@ paths:
             The request cannot be sent as it is. Nothing was sent. A media address that is not a web
             address is bad_request with error.field here too, as on /api/v2/posts. api_error for a network that is
             not connected (an Instagram, Facebook or Threads connection with status expired is the 401 below).
+            Skool: a file that cannot be used is bad_request (not in our file storage, not found at its
+            address, refused by its host, at an address that cannot be fetched because it redirects more
+            than 5 times or is not a public web address, not an image or a video, or empty), and Skool's
+            own refusal of a file is skool_rejected; nothing was posted and the message names the file.
           x-error-codes: [api_error, bad_request, scheduled_for_invalid, youtube_tags_too_long, idempotency_key_invalid, profile_name_ambiguous, pinterest_board_required, media_wrong_for_post_type, options_outside_post, media_not_available, video_size_unknown, no_container, no_publish_id, pinterest_sandbox_board, pinterest_rejected, x_rejected, skool_rejected, category_required]
           content:
             application/json:
@@ -1465,6 +1478,7 @@ paths:
           description: >-
             api_error: "Missing Authorization: Bearer <api_key>" or "Invalid or inactive API key"; or a
             network sign-in it no longer accepts, with the same codes as on /api/v2/posts.
+            Skool's reconnect_required also comes when Skool answers with its sign-in page.
             An Instagram, Facebook or Threads connection with status expired (health reconnect_required in GET
             /api/v2/accounts) is refused this way before anything is sent, with error.platform and a message that
             says to reconnect it; a Meta connection also turns expired when Meta refuses its sign-in on a post, a
@@ -1533,8 +1547,10 @@ paths:
           description: >-
             upload_worker_failed: on X and LinkedIn, our upload of a file to the network did not finish,
             so the post was not sent: nothing was posted, the message names the file, and it is safe to
-            send it again. On TikTok, our upload of a video stopped before TikTok confirmed it. Or a
-            gateway's own 502.
+            send it again. On TikTok, our upload of a video stopped before TikTok confirmed it. On Skool,
+            upload_worker_failed: our upload of a file did not finish, or its host or our file storage
+            could not send it just now, or its host name could not be found just now: nothing was
+            posted, the message names the file, and it is safe to send it again. Or a gateway's own 502.
           x-error-codes: [upload_worker_failed]
           headers:
             Idempotent-Replayed:
@@ -1546,6 +1562,7 @@ paths:
         '503':
           description: >-
             Nothing was posted; send it again after Retry-After when it is sent (5 seconds).
+            skool_unavailable also when Skool's security check stopped our request; nothing went out.
             TOKEN_REFRESH_FAILED (TikTok): the sign-in could not be renewed just now, as on /api/v2/posts;
             wait a few minutes, then send it again.
           x-error-codes: [caller_check_unavailable, schedule_check_unavailable, idempotency_unavailable, skool_unavailable, x_unavailable, TOKEN_REFRESH_FAILED]
@@ -2140,7 +2157,10 @@ components:
         is "processing" (every YouTube upload, large videos on X, LinkedIn, Facebook and Skool).
         still_publishing also answers a Facebook post that Facebook accepted without sending back its
         id, or answered with a status that is neither a confirmation nor a refusal: it may already be
-        live; do not send it again; History shows what our check finds.
+        live; do not send it again; History shows what our check finds. still_publishing also when
+        Skool accepted the post without sending back its id, answered it with a Skool server error
+        (5xx) or a redirect that is not its sign-in page, or our call to Skool got no answer: it may
+        be live, and Skool cannot be checked from here, so look at the group before sending it again.
       headers:
         Idempotent-Replayed:
           $ref: '#/components/headers/IdempotentReplayed'
@@ -2209,6 +2229,19 @@ components:
                   post_id: e5f6a7b8-c9d0-1234-ef01-345678901234
                   scheduled_post_id: null
                   status_url: https://status200uploads.com/api/v2/posts/e5f6a7b8-c9d0-1234-ef01-345678901234
+            skoolNoAnswer:
+              summary: Our call to Skool got no answer (Skool cannot be checked from here)
+              value:
+                success: false
+                status: unknown
+                code: still_publishing
+                retry: false
+                message: 'No answer came back while this post was being sent to Skool, so we do not know whether it was published, and Skool cannot be checked from here. Do not send this request again: look at the Skool account first, and post it again (with a new Idempotency-Key, if you use one) only if it is not there.'
+                post_id: f7a8b9c0-d1e2-3456-f012-567890123456
+                status200:
+                  post_id: f7a8b9c0-d1e2-3456-f012-567890123456
+                  scheduled_post_id: null
+                  status_url: https://status200uploads.com/api/v2/posts/f7a8b9c0-d1e2-3456-f012-567890123456
             processing:
               summary: A YouTube upload (always in the background)
               value:
@@ -2241,7 +2274,8 @@ components:
         Nothing was posted. caller_check_unavailable, schedule_check_unavailable,
         idempotency_unavailable and dry_run_unavailable carry Retry-After 5 and retry_after_seconds 5:
         send the same request again then. skool_unavailable, x_unavailable: the network is not taking
-        posts from us right now; try again later. TOKEN_REFRESH_FAILED (TikTok): the TikTok sign-in could
+        posts from us right now; try again later. skool_unavailable also when Skool's security check
+        stopped our request; nothing went out. TOKEN_REFRESH_FAILED (TikTok): the TikTok sign-in could
         not be renewed just now (another request was renewing it, TikTok did not answer the renewal
         properly, or the fault was ours); wait a few minutes, then send the same request again.
       x-error-codes: [caller_check_unavailable, schedule_check_unavailable, idempotency_unavailable, dry_run_unavailable, skool_unavailable, x_unavailable, TOKEN_REFRESH_FAILED]
@@ -2441,8 +2475,9 @@ components:
         dryRun:
           type: boolean
           description: >-
-            true: check this post and send nothing (every check a publish makes; the answer is 200 with
-            dry_run true, and it is not counted in the key's request count). false or absent: publish.
+            true: check this post and send nothing (every check a publish makes; a Skool post's files are
+            read only when it is sent; the answer is 200 with dry_run true, and it is not counted in the
+            key's request count). false or absent: publish.
             Also read as dry_run, and inside post; a dry run may send the post as validate instead of
             post. Any value but true or false (or true in one place and false in another) is 400 and
             nothing is published.
@@ -2517,7 +2552,13 @@ components:
             type: string
           description: >-
             Public URLs of the files. Whether a file is an image or a video is read from the end of its
-            URL (.jpg, .png, .mp4 ...). A scheduled post fetches them when it goes out, not now (warning
+            URL (.jpg, .png, .mp4 ...). On Skool, the type a file's address serves decides whether it is
+            sent as an image or a video, and the end of its URL only when the address serves a generic
+            type such as application/octet-stream; an address that serves anything else is refused
+            (400 bad_request). A Skool post with a file over 100 MB at an address ending in .mp4, .mov,
+            .webm, .m4v, .avi or .mkv is sent in the background, and every address of that post with such
+            an ending is then sent as a video, whatever type it serves.
+            A scheduled post fetches them when it goes out, not now (warning
             media_url_not_kept). Not used when file ids are sent too. Each must be a full web address that
             a URL parser reads, starting with https:// or http://; anything else (a file name joined in
             front of the address, a file path, an empty value, a value that is not text) is 400 bad_request
@@ -3125,7 +3166,7 @@ components:
           type: integer
           description: >-
             upload_worker_failed: the HTTP status of our upload step. TikTok's always carries it; on X and
-            LinkedIn it is left out when no answer came back from that step.
+            LinkedIn it is left out when no answer came back from that step. Skool's never carries it.
         attempts:
           type: integer
         ceiling:
